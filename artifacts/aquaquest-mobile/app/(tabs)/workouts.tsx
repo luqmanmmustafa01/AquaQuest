@@ -42,6 +42,17 @@ const EXP_LEVELS: { value: ExperienceLevel; label: string }[] = [
   { value: "advanced", label: "Advanced" },
 ];
 
+const GOAL_OPTIONS = [
+  "Build muscle",
+  "Lose weight",
+  "Improve endurance",
+  "Increase strength",
+  "Improve flexibility",
+  "Athletic performance",
+  "General fitness",
+  "Other",
+];
+
 function ExerciseRow({
   exercise,
   dayIndex,
@@ -169,8 +180,10 @@ export default function WorkoutsScreen() {
     height: "",
     weight: "",
     goal: "",
+    goalCustom: "",
     experienceLevel: "beginner" as ExperienceLevel,
   });
+  const [goalDropdownOpen, setGoalDropdownOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const { data: profile, refetch: refetchProfile } = useGetWorkoutProfile();
