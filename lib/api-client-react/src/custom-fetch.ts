@@ -26,9 +26,16 @@ function isUrl(input: RequestInfo | URL): input is URL {
 }
 
 function resolveUrl(input: RequestInfo | URL): string {
-  if (typeof input === "string") return input;
-  if (isUrl(input)) return input.toString();
-  return input.url;
+  let url: string;
+  if (typeof input === "string") url = input;
+  else if (isUrl(input)) url = input.toString();
+  else url = input.url;
+
+  // In React Native (Expo), relative URLs don't work — prepend the configured domain.
+  if (url.startsWith("/") && typeof process !== "undefined" && process.env?.EXPO_PUBLIC_DOMAIN) {
+    url = `${process.env.EXPO_PUBLIC_DOMAIN}${url}`;
+  }
+  return url;
 }
 
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
@@ -297,9 +304,10 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
-  const requestInfo = { method, url: resolveUrl(input) };
+  const resolvedUrl = resolveUrl(input);
+  const requestInfo = { method, url: resolvedUrl };
 
-  const response = await fetch(input, { ...init, method, headers });
+  const response = await fetch(resolvedUrl, { ...init, method, headers });
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

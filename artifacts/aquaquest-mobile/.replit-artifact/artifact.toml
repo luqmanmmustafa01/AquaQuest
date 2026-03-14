@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/mobile/"
+title = "AquaQuest Mobile"
+version = "1.0.0"
+id = "artifacts/aquaquest-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+localPort = 22203
+name = "expo"
+paths = ["/mobile/"]
+
+[services.development]
+run = "pnpm --filter @workspace/aquaquest-mobile run dev"
+
+[services.env]
+PORT = "22203"
+BASE_PATH = "/mobile/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/aquaquest-mobile", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/aquaquest-mobile", "run", "serve"]
