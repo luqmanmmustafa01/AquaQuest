@@ -1,15 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AquaQuest API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: quests
+    description: Quest operations
+  - name: creatures
+    description: Sea creature operations
+  - name: achievements
+    description: Achievement operations
 paths:
   /healthz:
     get:
@@ -24,6 +29,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /quests:
+    get:
+      operationId: getQuests
+      tags: [quests]
+      summary: Get all quests
+      responses:
+        "200":
+          description: List of quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quest"
+    post:
+      operationId: createQuest
+      tags: [quests]
+      summary: Create a new quest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuestInput"
+      responses:
+        "201":
+          description: Quest created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quest"
+  /quests/{id}:
+    get:
+      operationId: getQuest
+      tags: [quests]
+      summary: Get a quest by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quest found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quest"
+        "404":
+          description: Quest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateQuest
+      tags: [quests]
+      summary: Update a quest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuestInput"
+      responses:
+        "200":
+          description: Quest updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quest"
+    delete:
+      operationId: deleteQuest
+      tags: [quests]
+      summary: Delete a quest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Quest deleted
+  /creatures:
+    get:
+      operationId: getCreatures
+      tags: [creatures]
+      summary: Get all discovered sea creatures
+      responses:
+        "200":
+          description: List of sea creatures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Creature"
+  /achievements:
+    get:
+      operationId: getAchievements
+      tags: [achievements]
+      summary: Get all achievements
+      responses:
+        "200":
+          description: List of achievements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Achievement"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +157,138 @@ components:
           type: string
       required:
         - status
-
+    Quest:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        status:
+          type: string
+          enum: [active, completed, failed]
+        xpReward:
+          type: integer
+        depthLevel:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - difficulty
+        - status
+        - xpReward
+        - depthLevel
+        - createdAt
+        - updatedAt
+    CreateQuestInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        xpReward:
+          type: integer
+        depthLevel:
+          type: integer
+      required:
+        - title
+        - description
+        - difficulty
+        - xpReward
+        - depthLevel
+    UpdateQuestInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, legendary]
+        status:
+          type: string
+          enum: [active, completed, failed]
+        xpReward:
+          type: integer
+        depthLevel:
+          type: integer
+    Creature:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        species:
+          type: string
+        rarity:
+          type: string
+          enum: [common, uncommon, rare, epic, legendary]
+        depthFound:
+          type: integer
+        discoveredAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        emoji:
+          type: string
+      required:
+        - id
+        - name
+        - species
+        - rarity
+        - depthFound
+        - discoveredAt
+        - description
+        - emoji
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        unlockedAt:
+          type: string
+          format: date-time
+        category:
+          type: string
+          enum: [exploration, combat, collection, social]
+      required:
+        - id
+        - title
+        - description
+        - icon
+        - category
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message

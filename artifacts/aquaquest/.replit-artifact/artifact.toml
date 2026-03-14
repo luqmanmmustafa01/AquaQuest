@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AquaQuest"
+version = "1.0.0"
+id = "artifacts/aquaquest"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 25282
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/aquaquest run dev"
+
+[services.env]
+PORT = "25282"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/aquaquest", "run", "build"]
+publicDir = "artifacts/aquaquest/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

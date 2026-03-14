@@ -1,0 +1,18 @@
+packages:
+  "framer-motion": "For fluid, premium page transitions and interactive component animations (glassmorphism modals, expanding cards)"
+  "clsx": "For conditional class name merging in UI components"
+  "tailwind-merge": "For resolving Tailwind CSS class conflicts safely in reusable components"
+  "date-fns": "For formatting quest creation dates and achievement unlock timestamps elegantly"
+
+images:
+  - path: "artifacts/aquaquest/public/images/deep-ocean-hero.png"
+    description: "A stunning, highly detailed underwater ocean depth scene. Dark navy blue water transitioning to deep teal, with subtle bioluminescent particles, soft god rays filtering down from above, and dark mysterious silhouettes of sea terrain. Cinematic, 8k, highly atmospheric."
+    aspect_ratio: "16:9"
+  - path: "artifacts/aquaquest/public/images/sidebar-texture.png"
+    description: "Subtle dark navy gradient texture with very faint geometric sonar-like grid lines and soft underwater light refraction. Minimalist, clean, elegant."
+    aspect_ratio: "9:16"
+
+notes:
+  - "The API is REST-based and fully defined in @workspace/api-client-react. All hooks will be imported directly from there."
+  - "Creatures and Achievements endpoints are read-only galleries (GET only) as per the schema."
+  - "Quests have full CRUD operations."

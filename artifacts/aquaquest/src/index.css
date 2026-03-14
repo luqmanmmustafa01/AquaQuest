@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  --color-background: #0A1628;
+  --color-foreground: #F8FAFC;
+  
+  --color-card: #0F1F3A;
+  --color-card-foreground: #F8FAFC;
+  
+  --color-popover: #0F1F3A;
+  --color-popover-foreground: #F8FAFC;
+  
+  --color-primary: #0E7490;
+  --color-primary-foreground: #FFFFFF;
+  
+  --color-secondary: #1E3A5F;
+  --color-secondary-foreground: #F8FAFC;
+  
+  --color-muted: #1A2D4C;
+  --color-muted-foreground: #94A3B8;
+  
+  --color-accent: #06B6D4;
+  --color-accent-foreground: #FFFFFF;
+  
+  --color-destructive: #7F1D1D;
+  --color-destructive-foreground: #FEF2F2;
+  
+  --color-border: #1A2D4C;
+  --color-input: #1A2D4C;
+  --color-ring: #0E7490;
+  
+  --color-sidebar: #07101E;
+  --color-sidebar-foreground: #F8FAFC;
+  --color-sidebar-border: #15243D;
+  --color-sidebar-accent: #0F1F3A;
+  --color-sidebar-accent-foreground: #FFFFFF;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased min-h-screen selection:bg-primary/30;
+    background-image: 
+      radial-gradient(circle at 50% 0%, #0E749015 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, #06B6D410 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-card/80 backdrop-blur-xl border border-border shadow-lg shadow-black/20;
+  }
+  
+  .glass-button {
+    @apply bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px theme('colors.primary'), 0 0 10px theme('colors.primary');
+  }
+
+  /* Custom scrollbar for webkit */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full hover:bg-muted-foreground;
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out 3s infinite;
+}
