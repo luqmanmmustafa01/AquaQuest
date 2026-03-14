@@ -16,13 +16,17 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
         <Label>Dashboard</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="workouts">
+        <Icon sf={{ default: "dumbbell", selected: "dumbbell.fill" }} />
+        <Label>Workouts</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="quests">
         <Icon sf={{ default: "map", selected: "map.fill" }} />
-        <Label>Quests</Label>
+        <Label>Goals</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="creatures">
         <Icon sf={{ default: "fish", selected: "fish.fill" }} />
-        <Label>Creatures</Label>
+        <Label>Aquarium</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="achievements">
         <Icon sf={{ default: "trophy", selected: "trophy.fill" }} />
@@ -73,9 +77,21 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="workouts"
+        options={{
+          title: "Workouts",
+          tabBarIcon: ({ color, size }) =>
+            isIOS ? (
+              <SymbolView name="dumbbell.fill" tintColor={color} size={size} />
+            ) : (
+              <Ionicons name="barbell" size={size} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="quests"
         options={{
-          title: "Quests",
+          title: "Goals",
           tabBarIcon: ({ color, size }) =>
             isIOS ? (
               <SymbolView name="map.fill" tintColor={color} size={size} />
@@ -87,7 +103,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="creatures"
         options={{
-          title: "Creatures",
+          title: "Aquarium",
           tabBarIcon: ({ color, size }) =>
             isIOS ? (
               <SymbolView name="fish.fill" tintColor={color} size={size} />

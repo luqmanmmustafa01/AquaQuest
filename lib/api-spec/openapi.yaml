@@ -15,6 +15,8 @@ tags:
     description: Sea creature operations
   - name: achievements
     description: Achievement operations
+  - name: workouts
+    description: Workout plan operations
 paths:
   /healthz:
     get:
@@ -148,6 +150,135 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Achievement"
+  /workouts/profile:
+    get:
+      operationId: getWorkoutProfile
+      tags: [workouts]
+      summary: Get user workout profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: saveWorkoutProfile
+      tags: [workouts]
+      summary: Save or update user workout profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+  /workouts/generate:
+    post:
+      operationId: generateWorkoutPlan
+      tags: [workouts]
+      summary: Generate AI-powered 7-day workout plan
+      responses:
+        "200":
+          description: Generated workout plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlan"
+        "400":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /workouts/plans:
+    get:
+      operationId: getWorkoutPlans
+      tags: [workouts]
+      summary: Get all saved workout plans
+      responses:
+        "200":
+          description: List of workout plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutPlan"
+  /workouts/plans/{id}:
+    get:
+      operationId: getWorkoutPlan
+      tags: [workouts]
+      summary: Get a specific workout plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workout plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutPlan"
+        "404":
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /workouts/logs:
+    post:
+      operationId: logExercise
+      tags: [workouts]
+      summary: Log a completed exercise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseLogInput"
+      responses:
+        "200":
+          description: Exercise logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseLog"
+  /workouts/logs/{planId}:
+    get:
+      operationId: getWorkoutLogs
+      tags: [workouts]
+      summary: Get exercise logs for a plan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exercise logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExerciseLog"
 components:
   schemas:
     HealthStatus:
@@ -292,3 +423,143 @@ components:
       required:
         - error
         - message
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        age:
+          type: integer
+        height:
+          type: string
+        weight:
+          type: string
+        goal:
+          type: string
+        experienceLevel:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - age
+        - height
+        - weight
+        - goal
+        - experienceLevel
+        - createdAt
+        - updatedAt
+    UserProfileInput:
+      type: object
+      properties:
+        age:
+          type: integer
+        height:
+          type: string
+        weight:
+          type: string
+        goal:
+          type: string
+        experienceLevel:
+          type: string
+          enum: [beginner, intermediate, advanced]
+      required:
+        - age
+        - height
+        - weight
+        - goal
+        - experienceLevel
+    Exercise:
+      type: object
+      properties:
+        name:
+          type: string
+        sets:
+          type: integer
+        reps:
+          type: string
+        rest:
+          type: string
+        notes:
+          type: string
+      required:
+        - name
+        - sets
+        - reps
+        - rest
+    WorkoutDay:
+      type: object
+      properties:
+        day:
+          type: string
+        focus:
+          type: string
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+      required:
+        - day
+        - focus
+        - exercises
+    WorkoutPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        profileId:
+          type: integer
+        plan:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutDay"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - plan
+        - createdAt
+    ExerciseLogInput:
+      type: object
+      properties:
+        workoutPlanId:
+          type: integer
+        dayIndex:
+          type: integer
+        exerciseName:
+          type: string
+        completed:
+          type: boolean
+      required:
+        - workoutPlanId
+        - dayIndex
+        - exerciseName
+        - completed
+    ExerciseLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        workoutPlanId:
+          type: integer
+        dayIndex:
+          type: integer
+        exerciseName:
+          type: string
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - workoutPlanId
+        - dayIndex
+        - exerciseName
+        - completed

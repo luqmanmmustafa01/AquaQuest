@@ -123,3 +123,152 @@ export const GetAchievementsResponseItem = zod.object({
   category: zod.enum(["exploration", "combat", "collection", "social"]),
 });
 export const GetAchievementsResponse = zod.array(GetAchievementsResponseItem);
+
+/**
+ * @summary Get user workout profile
+ */
+export const GetWorkoutProfileResponse = zod.object({
+  id: zod.number(),
+  age: zod.number(),
+  height: zod.string(),
+  weight: zod.string(),
+  goal: zod.string(),
+  experienceLevel: zod.enum(["beginner", "intermediate", "advanced"]),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Save or update user workout profile
+ */
+export const SaveWorkoutProfileBody = zod.object({
+  age: zod.number(),
+  height: zod.string(),
+  weight: zod.string(),
+  goal: zod.string(),
+  experienceLevel: zod.enum(["beginner", "intermediate", "advanced"]),
+});
+
+export const SaveWorkoutProfileResponse = zod.object({
+  id: zod.number(),
+  age: zod.number(),
+  height: zod.string(),
+  weight: zod.string(),
+  goal: zod.string(),
+  experienceLevel: zod.enum(["beginner", "intermediate", "advanced"]),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Generate AI-powered 7-day workout plan
+ */
+export const GenerateWorkoutPlanResponse = zod.object({
+  id: zod.number(),
+  profileId: zod.number().optional(),
+  plan: zod.array(
+    zod.object({
+      day: zod.string(),
+      focus: zod.string(),
+      exercises: zod.array(
+        zod.object({
+          name: zod.string(),
+          sets: zod.number(),
+          reps: zod.string(),
+          rest: zod.string(),
+          notes: zod.string().optional(),
+        }),
+      ),
+    }),
+  ),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Get all saved workout plans
+ */
+export const GetWorkoutPlansResponseItem = zod.object({
+  id: zod.number(),
+  profileId: zod.number().optional(),
+  plan: zod.array(
+    zod.object({
+      day: zod.string(),
+      focus: zod.string(),
+      exercises: zod.array(
+        zod.object({
+          name: zod.string(),
+          sets: zod.number(),
+          reps: zod.string(),
+          rest: zod.string(),
+          notes: zod.string().optional(),
+        }),
+      ),
+    }),
+  ),
+  createdAt: zod.date(),
+});
+export const GetWorkoutPlansResponse = zod.array(GetWorkoutPlansResponseItem);
+
+/**
+ * @summary Get a specific workout plan
+ */
+export const GetWorkoutPlanParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetWorkoutPlanResponse = zod.object({
+  id: zod.number(),
+  profileId: zod.number().optional(),
+  plan: zod.array(
+    zod.object({
+      day: zod.string(),
+      focus: zod.string(),
+      exercises: zod.array(
+        zod.object({
+          name: zod.string(),
+          sets: zod.number(),
+          reps: zod.string(),
+          rest: zod.string(),
+          notes: zod.string().optional(),
+        }),
+      ),
+    }),
+  ),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Log a completed exercise
+ */
+export const LogExerciseBody = zod.object({
+  workoutPlanId: zod.number(),
+  dayIndex: zod.number(),
+  exerciseName: zod.string(),
+  completed: zod.boolean(),
+});
+
+export const LogExerciseResponse = zod.object({
+  id: zod.number(),
+  workoutPlanId: zod.number(),
+  dayIndex: zod.number(),
+  exerciseName: zod.string(),
+  completed: zod.boolean(),
+  completedAt: zod.date().optional(),
+});
+
+/**
+ * @summary Get exercise logs for a plan
+ */
+export const GetWorkoutLogsParams = zod.object({
+  planId: zod.coerce.number(),
+});
+
+export const GetWorkoutLogsResponseItem = zod.object({
+  id: zod.number(),
+  workoutPlanId: zod.number(),
+  dayIndex: zod.number(),
+  exerciseName: zod.string(),
+  completed: zod.boolean(),
+  completedAt: zod.date().optional(),
+});
+export const GetWorkoutLogsResponse = zod.array(GetWorkoutLogsResponseItem);

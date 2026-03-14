@@ -130,3 +130,77 @@ export interface ErrorResponse {
   error: string;
   message: string;
 }
+
+export type UserProfileExperienceLevel =
+  (typeof UserProfileExperienceLevel)[keyof typeof UserProfileExperienceLevel];
+
+export const UserProfileExperienceLevel = {
+  beginner: "beginner",
+  intermediate: "intermediate",
+  advanced: "advanced",
+} as const;
+
+export interface UserProfile {
+  id: number;
+  age: number;
+  height: string;
+  weight: string;
+  goal: string;
+  experienceLevel: UserProfileExperienceLevel;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UserProfileInputExperienceLevel =
+  (typeof UserProfileInputExperienceLevel)[keyof typeof UserProfileInputExperienceLevel];
+
+export const UserProfileInputExperienceLevel = {
+  beginner: "beginner",
+  intermediate: "intermediate",
+  advanced: "advanced",
+} as const;
+
+export interface UserProfileInput {
+  age: number;
+  height: string;
+  weight: string;
+  goal: string;
+  experienceLevel: UserProfileInputExperienceLevel;
+}
+
+export interface Exercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  notes?: string;
+}
+
+export interface WorkoutDay {
+  day: string;
+  focus: string;
+  exercises: Exercise[];
+}
+
+export interface WorkoutPlan {
+  id: number;
+  profileId?: number;
+  plan: WorkoutDay[];
+  createdAt: string;
+}
+
+export interface ExerciseLogInput {
+  workoutPlanId: number;
+  dayIndex: number;
+  exerciseName: string;
+  completed: boolean;
+}
+
+export interface ExerciseLog {
+  id: number;
+  workoutPlanId: number;
+  dayIndex: number;
+  exerciseName: string;
+  completed: boolean;
+  completedAt?: string;
+}
