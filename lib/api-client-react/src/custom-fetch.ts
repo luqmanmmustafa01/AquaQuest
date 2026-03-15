@@ -33,7 +33,9 @@ function resolveUrl(input: RequestInfo | URL): string {
 
   // In React Native (Expo), relative URLs don't work — prepend the configured domain.
   if (url.startsWith("/") && typeof process !== "undefined" && process.env?.EXPO_PUBLIC_DOMAIN) {
-    url = `${process.env.EXPO_PUBLIC_DOMAIN}${url}`;
+    const domain = process.env.EXPO_PUBLIC_DOMAIN;
+    const prefix = domain.startsWith("http") ? domain : `https://${domain}`;
+    url = `${prefix}${url}`;
   }
   return url;
 }
