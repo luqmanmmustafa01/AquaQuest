@@ -113,12 +113,20 @@ function ExerciseCard({
   const [expanded, setExpanded] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [completedSets, setCompletedSets] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerProgress = useRef(new Animated.Value(1)).current;
   const done = logs.find((l) => l.exerciseName === exercise.name)?.completed ?? false;
   const mc = getMuscleColor(exercise.muscleGroup);
+  const totalSets = typeof exercise.sets === "number" ? exercise.sets : (parseInt(String(exercise.sets)) || 1);
+  const isTimeBased = /second|minute|\bmin\b|\bsec\b|hold/i.test(exercise.reps ?? "");
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  useEffect(() => {
+    if (done && completedSets < totalSets) setCompletedSets(totalSets);
+    if (!done && completedSets >= totalSets) setCompletedSets(0);
+  }, [done, totalSets]);
 
   const startRestTimer = (totalSecs: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -149,25 +157,52 @@ function ExerciseCard({
     setRegenerating(false);
   };
 
-  const handleToggle = (name: string, completed: boolean) => {
+  const handleSetTap = (setIndex: number) => {
     if (Platform.OS !== "web") Haptics.selectionAsync();
-    onToggle(name, completed);
-    if (completed) startRestTimer(parseRestSeconds(exercise.rest));
-    else skipTimer();
+    if (setIndex < completedSets) {
+      const newCompleted = setIndex;
+      setCompletedSets(newCompleted);
+      if (done) onToggle(exercise.name, false);
+      skipTimer();
+    } else if (setIndex === completedSets) {
+      const newCompleted = setIndex + 1;
+      setCompletedSets(newCompleted);
+      if (newCompleted >= totalSets) {
+        onToggle(exercise.name, true);
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      startRestTimer(parseRestSeconds(exercise.rest));
+    }
   };
 
   return (
     <View style={[styles.exCard, done && styles.exCardDone]}>
       <View style={styles.exCardTop}>
-        <Pressable
-          style={[styles.exCheckbox, done && { backgroundColor: Colors.success, borderColor: Colors.success }]}
-          onPress={() => handleToggle(exercise.name, !done)}
-        >
-          {done && (isIOS
-            ? <SymbolView name="checkmark" size={11} tintColor={Colors.navy} />
-            : <Ionicons name="checkmark" size={11} color={Colors.navy} />
-          )}
-        </Pressable>
+        {/* Per-set bubbles */}
+        <View style={styles.setBubbles}>
+          <View style={styles.setBubblesRow}>
+            {Array.from({ length: totalSets }).map((_, i) => (
+              <Pressable
+                key={i}
+                onPress={() => handleSetTap(i)}
+                style={[
+                  styles.setBubble,
+                  i < completedSets && styles.setBubbleDone,
+                  i === completedSets && styles.setBubbleNext,
+                ]}
+              >
+                {i < completedSets
+                  ? (isIOS
+                    ? <SymbolView name="checkmark" size={9} tintColor={Colors.navy} />
+                    : <Ionicons name="checkmark" size={9} color={Colors.navy} />
+                  )
+                  : <Text style={[styles.setBubbleText, i === completedSets && styles.setBubbleTextNext]}>{i + 1}</Text>
+                }
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.setCount}>{completedSets}/{totalSets}</Text>
+        </View>
 
         <View style={styles.exInfo}>
           <Text style={[styles.exName, done && styles.exNameDone]}>{exercise.name}</Text>
@@ -190,12 +225,12 @@ function ExerciseCard({
             </View>
           )}
 
-          {/* Weight input */}
+          {/* Weight / Duration input */}
           <View style={styles.weightRow}>
-            <Text style={styles.weightLabel}>Weight used:</Text>
+            <Text style={styles.weightLabel}>{isTimeBased ? "Duration:" : "Weight used:"}</Text>
             <TextInput
               style={styles.weightInput}
-              placeholder="e.g. 50lbs"
+              placeholder={isTimeBased ? "e.g. 45 sec" : "e.g. 50lbs"}
               placeholderTextColor={Colors.textDim}
               value={weight}
               onChangeText={(v) => onWeightChange(exercise.name, v)}
@@ -921,6 +956,14 @@ const styles = StyleSheet.create({
   exCardDone: { backgroundColor: "#10B98108", borderColor: "#10B98130" },
   exCardTop: { flexDirection: "row", alignItems: "flex-start", padding: 14, gap: 12 },
   exCheckbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: "#FFFFFF33", alignItems: "center", justifyContent: "center", marginTop: 1 },
+  setBubbles: { alignItems: "center", gap: 3, flexShrink: 0, paddingTop: 1 },
+  setBubblesRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, justifyContent: "center", maxWidth: 70 },
+  setBubble: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: "#FFFFFF33", alignItems: "center", justifyContent: "center" },
+  setBubbleDone: { backgroundColor: Colors.success, borderColor: Colors.success },
+  setBubbleNext: { borderColor: Colors.teal },
+  setBubbleText: { color: "#FFFFFF55", fontSize: 9, fontWeight: "700" },
+  setBubbleTextNext: { color: Colors.teal },
+  setCount: { color: Colors.textDim, fontSize: 10, fontWeight: "600" },
   exInfo: { flex: 1 },
   exName: { color: Colors.white, fontWeight: "700", fontSize: 15 },
   exNameDone: { color: Colors.textDim, textDecorationLine: "line-through" },

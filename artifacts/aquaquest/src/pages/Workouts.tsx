@@ -91,10 +91,18 @@ function ExerciseCard({
   const [expanded, setExpanded] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [completedSets, setCompletedSets] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const done = logs.find((l) => l.exerciseName === exercise.name)?.completed ?? false;
+  const totalSets = typeof exercise.sets === "number" ? exercise.sets : (parseInt(String(exercise.sets)) || 1);
+  const isTimeBased = /second|minute|\bmin\b|\bsec\b|hold/i.test(exercise.reps ?? "");
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  useEffect(() => {
+    if (done && completedSets < totalSets) setCompletedSets(totalSets);
+    if (!done && completedSets >= totalSets) setCompletedSets(0);
+  }, [done, totalSets]);
 
   const startRestTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -117,10 +125,18 @@ function ExerciseCard({
     setRestTimer(null);
   };
 
-  const handleToggle = (name: string, completed: boolean) => {
-    onToggle(name, completed);
-    if (completed) startRestTimer();
-    else skipTimer();
+  const handleSetTap = (setIndex: number) => {
+    if (setIndex < completedSets) {
+      const newCompleted = setIndex;
+      setCompletedSets(newCompleted);
+      if (done) onToggle(exercise.name, false);
+      skipTimer();
+    } else if (setIndex === completedSets) {
+      const newCompleted = setIndex + 1;
+      setCompletedSets(newCompleted);
+      if (newCompleted >= totalSets) onToggle(exercise.name, true);
+      startRestTimer();
+    }
   };
 
   const handleRegen = async () => {
@@ -135,15 +151,28 @@ function ExerciseCard({
       done ? "border-emerald-500/30 bg-emerald-500/5" : "border-border/50 bg-card/60 hover:border-primary/30"
     )}>
       <div className="flex items-start gap-3 p-4">
-        <button
-          onClick={() => handleToggle(exercise.name, !done)}
-          className={cn(
-            "w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all",
-            done ? "bg-emerald-500 border-emerald-500" : "border-border hover:border-primary"
-          )}
-        >
-          {done && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-        </button>
+        {/* Per-set bubbles */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
+          <div className="flex gap-1 flex-wrap justify-center">
+            {Array.from({ length: totalSets }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => handleSetTap(i)}
+                className={cn(
+                  "w-6 h-6 rounded-full border-2 text-[10px] font-bold flex items-center justify-center transition-all",
+                  i < completedSets
+                    ? "bg-emerald-500 border-emerald-500 text-white"
+                    : i === completedSets
+                    ? "border-primary text-primary hover:bg-primary/10"
+                    : "border-border/40 text-muted-foreground/40 hover:border-border"
+                )}
+              >
+                {i < completedSets ? <Check className="w-3 h-3" strokeWidth={3} /> : i + 1}
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{completedSets}/{totalSets}</span>
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -194,12 +223,14 @@ function ExerciseCard({
             )}
           </AnimatePresence>
 
-          {/* Weight input */}
+          {/* Weight / Duration input */}
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-muted-foreground flex-shrink-0">Weight used:</span>
+            <span className="text-xs text-muted-foreground flex-shrink-0">
+              {isTimeBased ? "Duration:" : "Weight used:"}
+            </span>
             <Input
               className="h-6 w-28 text-xs px-2 bg-transparent border-border/30 text-white placeholder:text-muted-foreground/50"
-              placeholder="e.g. 50lbs"
+              placeholder={isTimeBased ? "e.g. 45 sec" : "e.g. 50lbs"}
               value={weight}
               onChange={(e) => onWeightChange(exercise.name, e.target.value)}
             />
