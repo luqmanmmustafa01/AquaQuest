@@ -173,6 +173,7 @@ function ExerciseCard({
 export default function WorkoutsScreen() {
   "use no memo";
   const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === "web" ? 67 : insets.top;
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"plan" | "history">("plan");
   const [selectedDay, setSelectedDay] = useState<number>(() => (new Date().getDay() + 6) % 7);
@@ -310,7 +311,7 @@ export default function WorkoutsScreen() {
   const today = (new Date().getDay() + 6) % 7;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: topInset + 44 }]}>
       {/* Completion Banner */}
       {showBanner && bannerData && (
         <View style={styles.banner}>
