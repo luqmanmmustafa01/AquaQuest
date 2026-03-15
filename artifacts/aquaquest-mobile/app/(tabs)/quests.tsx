@@ -312,7 +312,8 @@ function CreateQuestModal({ visible, onClose, onCreated }: { visible: boolean; o
 export default function QuestsScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
-  const { data: quests = [], isLoading, refetch } = useGetQuests();
+  const { data: _quests, isLoading, refetch } = useGetQuests();
+  const quests = _quests ?? [];
   const { mutateAsync: updateQuest } = useUpdateQuest();
   const { mutateAsync: deleteQuest } = useDeleteQuest();
   const [filter, setFilter] = useState<"all" | Status>("all");

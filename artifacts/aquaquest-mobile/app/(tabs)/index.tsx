@@ -102,9 +102,12 @@ function QuestRow({ quest }: { quest: any }) {
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { data: quests = [], isLoading: qLoading } = useGetQuests();
-  const { data: creatures = [], isLoading: cLoading } = useGetCreatures();
-  const { data: achievements = [], isLoading: aLoading } = useGetAchievements();
+  const { data: _quests, isLoading: qLoading } = useGetQuests();
+  const { data: _creatures, isLoading: cLoading } = useGetCreatures();
+  const { data: _achievements, isLoading: aLoading } = useGetAchievements();
+  const quests = _quests ?? [];
+  const creatures = _creatures ?? [];
+  const achievements = _achievements ?? [];
 
   const pulse = useSharedValue(1);
   React.useEffect(() => {

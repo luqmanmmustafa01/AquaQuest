@@ -93,7 +93,8 @@ function CreatureCard({ creature, index }: { creature: any; index: number }) {
 export default function CreaturesScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
-  const { data: creatures = [], isLoading, refetch } = useGetCreatures();
+  const { data: _creatures, isLoading, refetch } = useGetCreatures();
+  const creatures = _creatures ?? [];
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {
