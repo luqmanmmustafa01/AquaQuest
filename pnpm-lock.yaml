@@ -208,6 +208,10 @@ importers:
         version: 4.21.0
 
   artifacts/aquaquest:
+    dependencies:
+      '@workspace/api-client-react':
+        specifier: workspace:*
+        version: link:../../lib/api-client-react
     devDependencies:
       '@hookform/resolvers':
         specifier: ^3.10.0
