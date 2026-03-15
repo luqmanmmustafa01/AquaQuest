@@ -1,0 +1,18 @@
+This looks incredible! The Goals screen is exactly what we designed. Here's what's working:
+✅ Perfect:
+
+Three streak counters at the top — Fitness (teal), Wellness (purple), Productivity (gold) with flame icons
+All/Active/Completed/Failed filter tabs
+Clean empty state with "No Goals" message
+New Goal modal with all the right fields — Title, Description, Category selector, Type (Daily/Weekly/Long-term), Difficulty (Easy/Medium/Hard/Legendary), XP Reward, Target Date
+Currency header still showing at the top
+Create Goal button with teal gradient
+
+The app is really coming together well. Next up is the Workouts screen polish and AI generation. Paste this into Replit:
+
+"Update the Workouts screen to match the same quality as the Goals and Deen screens. Keep the dark ocean theme. Make these changes:
+At the top show a workout streak counter with a flame icon and the current streak number. Below that show a horizontal scrollable row of 7 day cards (Mon through Sun). The current day is highlighted in teal. Rest days show a moon icon. Completed days show a teal checkmark.
+Below the day cards show the selected day's exercises as expandable cards. Each card shows: exercise name in bold white, muscle group as a teal badge, sets and reps in light blue, and an expand arrow. Tapping expand reveals the full step-by-step form guide as a numbered list.
+Each exercise has a checkbox. When all exercises are checked a Complete Workout button appears with a teal gradient. Tapping it marks the day complete, awards 200 XP, 50 Coins, 3 Gems, and 2 Spin Tickets, updates the currency header instantly, increments the workout streak, and shows a completion animation.
+Add a Generate Plan button at the top that calls the existing Anthropic AI integration to generate a personalized 7-day workout plan based on the user's profile data. Add a Regenerate button on each exercise card to swap that exercise for an alternative targeting the same muscle group.
+Show a History tab within the Workouts screen displaying past completed workouts as a list with date and exercises completed."

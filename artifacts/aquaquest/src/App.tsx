@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Quests from "@/pages/Quests";
+import Workouts from "@/pages/Workouts";
 import Creatures from "@/pages/Creatures";
 import Achievements from "@/pages/Achievements";
 import Deen from "@/pages/Deen";
@@ -23,6 +24,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/quests" component={Quests} />
+        <Route path="/workouts" component={Workouts} />
         <Route path="/creatures" component={Creatures} />
         <Route path="/achievements" component={Achievements} />
         <Route path="/deen" component={Deen} />

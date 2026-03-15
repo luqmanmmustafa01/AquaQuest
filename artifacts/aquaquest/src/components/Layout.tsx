@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Fish, LayoutDashboard, Swords, Trophy, Menu, X, Moon } from "lucide-react";
+import { Compass, Fish, LayoutDashboard, Target, Trophy, Menu, X, Moon, Dumbbell } from "lucide-react";
 import { CurrencyBar } from "./CurrencyBar";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/quests", label: "Quests", icon: Swords },
+  { href: "/quests", label: "Goals", icon: Target },
+  { href: "/workouts", label: "Workouts", icon: Dumbbell },
   { href: "/creatures", label: "Creatures", icon: Fish },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/deen", label: "Deen", icon: Moon },

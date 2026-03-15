@@ -1,0 +1,20 @@
+"Add an Ocean Summon system to the Aquarium tab. Use the same dark ocean theme throughout — navy #0A1628, teal #0E7490, white text, glowing card effects.
+OCEAN SUMMON SCREEN LAYOUT
+The Aquarium tab has an Ocean Summon button at the top and a My Collection section below it. Tapping Ocean Summon opens a full screen modal. The tab for this feature is called Ocean Summon everywhere in the UI — never use the word gacha anywhere in the app.*
+BANNERS
+Two banners displayed as swipeable cards at the top of the Ocean Summon modal: Main Banner called Ocean Depths showing all fish rarities, and a Featured Banner called Tidal Surge showing a highlighted featured fish with a boosted rate. Each banner card shows the banner name, featured fish name, and the pull cost.*
+PULL COSTS
+Single summon costs 1 Spin Ticket or 100 Coins. 10x summon costs 8 Spin Tickets or 800 Coins. Show both options as buttons on each banner.*
+RARITY RATES
+Common 60%, Rare 25%, Epic 12%, Legendary 2.75%, Mythical 0.25%. Mythical has no pity — true 0.25% only. Pity system: guaranteed Epic or higher every 50 summons, guaranteed Legendary every 100 summons. Track summon count per user in the database.*
+SUMMON ANIMATION
+Chest opening animation with a light burst effect. Show a dark overlay screen with an animated chest in the center. The chest shakes then bursts open with a light explosion. The summoned fish card flies out and lands in the center. The card glows with its rarity color: grey for Common, blue for Rare, purple for Epic, gold for Legendary, red for Mythical. Show the fish name, rarity badge, and a short description. For 10x summons show all 10 cards fanning out after the chest burst.*
+FISH POOL
+Create a fish_pool table in PostgreSQL with columns: id, name, rarity, description, banner (main or featured), is_active. Seed it with these fish: Common: Clownfish, Goldfish, Guppy, Sardine, Anchovy. Rare: Lionfish, Mandarinfish, Blue Tang, Seahorse, Pufferfish. Epic: Glowing Eel, Giant Crab, Manta Ray, Hammerhead Shark, Bioluminescent Jellyfish. Legendary: Sea Dragon, Anglerfish, Oarfish, Colossal Squid. Mythical: Kraken, Leviathan, Koi Spirit, Dreadnought, Sea Dragon God.*
+COLLECTION
+After summoning, fish are added to the user's collection in a user_fish table with columns: id, user_id, fish_id, obtained_at, is_companion, evolution_stage. Duplicate fish convert to 10 Stardust. Show collected fish in the My Collection section as cards with rarity glow colors. Show total fish collected and Stardust balance.*
+PITY AND SUMMON TRACKING
+Store summon history in an ocean_summons table with columns: id, user_id, fish_id, banner, summoned_at, pity_count. Update pity count after every summon. Reset when a Legendary is pulled.*
+STARDUST SHOP
+Add a Stardust Shop button in the Aquarium tab. Spend 100 Stardust to get 1 guaranteed Rare summon ticket.*
+ALL SUMMON LOGIC runs server side in the Express backend as a POST endpoint called /api/ocean-summon/pull. The frontend only sends the banner type and summon count. The backend calculates the result, updates the database, deducts currency, and returns the summoned fish."

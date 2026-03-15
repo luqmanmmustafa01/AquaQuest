@@ -24,11 +24,19 @@ pnpm workspace monorepo using TypeScript. An ocean exploration quest-tracking ap
 
 ## Features
 
-- **Quests**: View, create, update status (active/completed/failed), delete quests with difficulty levels and XP rewards
+- **Goals** (formerly Quests): View, create, update status (active/completed/failed), delete goals with category badges (Fitness/teal, Wellness/purple, Productivity/gold), type labels, streak counters, progress bars, and dual filters (category + type)
 - **Creatures**: Sea creature collection gallery with rarity badges (common → legendary)
 - **Achievements**: Achievement panel with category badges and unlock status
-- **Dashboard**: Overview of active quests, stats, and progress
-- **Workouts**: AI-powered workout plan generation via Anthropic
+- **Dashboard**: Overview of active goals, stats, and progress
+- **Workouts** (redesigned, web + mobile):
+  - AI-powered 7-day personalized workout plan via Anthropic
+  - Workout streak counter with flame icon
+  - 7-day horizontal scrollable day selector (today highlighted teal, rest=moon, completed=checkmark)
+  - Expandable exercise cards: muscle group badge (colored per group), sets/reps, numbered form guide steps, checkbox, per-exercise regenerate button
+  - "Complete Workout" button (all exercises checked): awards 200 XP + 50 Coins + 3 Gems + 2 Spin Tickets, increments streak
+  - History tab: past completed workouts with date, focus, exercise count
+  - Profile setup modal (age, height, weight, goal, experience level)
+  - New backend endpoints: `POST /workouts/complete-day`, `POST /workouts/regenerate-exercise`, `GET /workouts/completions`
 - **Currency Header**: Persistent bar showing Coins 🪙, Gems 💎, Spin Tickets 🎟️ on every screen (web + mobile)
 - **Deen Screen** (web + mobile):
   - Prayer times (Aladhan API, location-based) with per-prayer checkboxes
@@ -53,9 +61,10 @@ artifacts-monorepo/
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
 │       └── src/schema/
-│           ├── quests.ts       # Quests table (difficulty, status, xp, depth)
+│           ├── quests.ts       # Goals table (category, type, streak, progress, target_date)
 │           ├── creatures.ts    # Sea creatures table (rarity, depth, emoji)
 │           ├── achievements.ts # Achievements table (category, unlocked_at)
+│           ├── workouts.ts     # user_profiles (+ workout_streak), workout_plans, workout_logs, workout_completions
 │           └── deen.ts         # user_currency, duas, deen_progress tables
 └── scripts/
 ```
@@ -63,11 +72,21 @@ artifacts-monorepo/
 ## API Routes
 
 - `GET /api/healthz` — Health check
-- `GET /api/quests` — List all quests
-- `POST /api/quests` — Create quest
-- `GET /api/quests/:id` — Get quest
-- `PATCH /api/quests/:id` — Update quest
-- `DELETE /api/quests/:id` — Delete quest
+- `GET /api/quests` — List all goals (category, type, streak, progress, target_date)
+- `POST /api/quests` — Create goal
+- `GET /api/quests/:id` — Get goal
+- `PATCH /api/quests/:id` — Update goal
+- `DELETE /api/quests/:id` — Delete goal
+- `GET /api/workouts/profile` — Get user workout profile (includes workoutStreak)
+- `POST /api/workouts/profile` — Create/update workout profile
+- `POST /api/workouts/generate` — Generate AI 7-day plan (with muscleGroup + formGuide per exercise)
+- `GET /api/workouts/plans` — List all workout plans
+- `GET /api/workouts/plans/:id` — Get specific plan
+- `POST /api/workouts/logs` — Log exercise completion
+- `GET /api/workouts/logs/:planId` — Get exercise logs for plan
+- `POST /api/workouts/complete-day` — Complete a workout day (awards 50 Coins, 3 Gems, 2 Spin Tickets, increments streak)
+- `GET /api/workouts/completions` — Get all completed workout days
+- `POST /api/workouts/regenerate-exercise` — AI-regenerate a single exercise in the plan
 - `GET /api/creatures` — List discovered creatures
 - `GET /api/achievements` — List achievements
 - `GET/PATCH /api/currency` — User currency (coins, gems, spin tickets)
