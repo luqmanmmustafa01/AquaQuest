@@ -310,6 +310,7 @@ function CreateQuestModal({ visible, onClose, onCreated }: { visible: boolean; o
 }
 
 export default function QuestsScreen() {
+  "use no memo";
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const { data: _quests, isLoading, refetch } = useGetQuests();

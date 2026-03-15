@@ -96,6 +96,7 @@ function AchievementItem({ achievement, index }: { achievement: any; index: numb
 }
 
 export default function AchievementsScreen() {
+  "use no memo";
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const { data: _achievements, isLoading, refetch } = useGetAchievements();

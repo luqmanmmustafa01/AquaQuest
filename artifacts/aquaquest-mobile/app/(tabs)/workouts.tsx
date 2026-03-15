@@ -173,6 +173,7 @@ function DayCard({
 }
 
 export default function WorkoutsScreen() {
+  "use no memo";
   const insets = useSafeAreaInsets();
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [form, setForm] = useState({

@@ -101,6 +101,7 @@ function QuestRow({ quest }: { quest: any }) {
 }
 
 export default function DashboardScreen() {
+  "use no memo";
   const insets = useSafeAreaInsets();
   const { data: _quests, isLoading: qLoading } = useGetQuests();
   const { data: _creatures, isLoading: cLoading } = useGetCreatures();

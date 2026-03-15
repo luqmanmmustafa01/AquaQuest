@@ -91,6 +91,7 @@ function CreatureCard({ creature, index }: { creature: any; index: number }) {
 }
 
 export default function CreaturesScreen() {
+  "use no memo";
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const { data: _creatures, isLoading, refetch } = useGetCreatures();
