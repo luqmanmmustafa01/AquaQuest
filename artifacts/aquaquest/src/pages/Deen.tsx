@@ -154,6 +154,7 @@ export default function DeenPage() {
   const [sunnah, setSunnah] = useState<string[]>([]);
   const [quranPages, setQuranPages] = useState(0);
   const [quranGoal, setQuranGoal] = useState(QURAN_GOAL_DEFAULT);
+  const [quranGoalStr, setQuranGoalStr] = useState(String(QURAN_GOAL_DEFAULT));
 
   /* Sync local state from API when loaded */
   useEffect(() => {
@@ -362,8 +363,18 @@ export default function DeenPage() {
             <div className="text-xs text-gray-400 mb-1">Daily goal (pages)</div>
             <Input
               type="number" min={1}
-              value={quranGoal}
-              onChange={(e) => setQuranGoal(Number(e.target.value))}
+              value={quranGoalStr}
+              onChange={(e) => {
+                setQuranGoalStr(e.target.value);
+                const n = parseInt(e.target.value, 10);
+                if (!isNaN(n) && n >= 1) setQuranGoal(n);
+              }}
+              onBlur={() => {
+                const n = parseInt(quranGoalStr, 10);
+                const valid = !isNaN(n) && n >= 1 ? n : 1;
+                setQuranGoal(valid);
+                setQuranGoalStr(String(valid));
+              }}
               className="w-24 bg-[#0A1628] border-[#0E7490]/30 text-white"
             />
           </div>

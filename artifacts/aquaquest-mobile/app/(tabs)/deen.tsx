@@ -175,6 +175,7 @@ export default function DeenScreen() {
   const [sunnah, setSunnah] = useState<string[]>([]);
   const [quranPages, setQuranPages] = useState(0);
   const [quranGoal, setQuranGoal] = useState(1);
+  const [quranGoalStr, setQuranGoalStr] = useState("1");
 
   useEffect(() => {
     if (!progress) return;
@@ -330,8 +331,18 @@ export default function DeenScreen() {
               <TextInput
                 style={styles.numInput}
                 keyboardType="numeric"
-                value={String(quranGoal)}
-                onChangeText={(v) => setQuranGoal(Number(v) || 1)}
+                value={quranGoalStr}
+                onChangeText={(v) => {
+                  setQuranGoalStr(v);
+                  const n = parseInt(v, 10);
+                  if (!isNaN(n) && n >= 1) setQuranGoal(n);
+                }}
+                onBlur={() => {
+                  const n = parseInt(quranGoalStr, 10);
+                  const valid = !isNaN(n) && n >= 1 ? n : 1;
+                  setQuranGoal(valid);
+                  setQuranGoalStr(String(valid));
+                }}
               />
             </View>
             <View style={{ flex: 1 }}>
