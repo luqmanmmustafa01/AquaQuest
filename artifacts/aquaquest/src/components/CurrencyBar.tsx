@@ -12,19 +12,18 @@ export function CurrencyBar() {
   const { data } = useQuery({ queryKey: ["currency"], queryFn: fetchCurrency, staleTime: 30_000 });
 
   const items = [
-    { icon: "🪙", label: "Coins", value: data?.coins ?? 0 },
-    { icon: "💎", label: "Gems", value: data?.gems ?? 0 },
-    { icon: "🎟️", label: "Tickets", value: data?.spinTickets ?? 0 },
+    { icon: "🪙", value: data?.coins ?? 0 },
+    { icon: "💎", value: data?.gems ?? 0 },
+    { icon: "🎟️", value: data?.spinTickets ?? 0 },
   ];
 
   return (
-    <div className="sticky top-0 z-30 w-full border-b border-[#0E7490]/30 bg-[#0A1628]/90 backdrop-blur-md">
-      <div className="flex items-center justify-end gap-6 px-6 py-2">
-        {items.map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <span className="text-base leading-none">{item.icon}</span>
-            <span className="text-xs font-semibold text-[#0E7490] uppercase tracking-wider">{item.label}</span>
-            <span className="text-sm font-bold text-white ml-1">{item.value.toLocaleString()}</span>
+    <div className="sticky top-0 z-30 w-full border-b border-[#0E7490]/20 bg-[#0A1628]/90 backdrop-blur-md">
+      <div className="flex items-center justify-end gap-4 px-5 py-1.5">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className="text-sm leading-none">{item.icon}</span>
+            <span className="text-xs font-bold text-white tabular-nums">{item.value.toLocaleString()}</span>
           </div>
         ))}
       </div>

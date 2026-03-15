@@ -294,7 +294,7 @@ export default function DeenPage() {
       )}
 
       {/* Top row: Score + Date */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className={cardStyle + " flex flex-col items-center justify-center gap-2"}>
           <ScoreRing score={score} />
           <div className="text-xs text-gray-400 text-center">Prayers · Quran · Dhikr · Sunnah</div>
@@ -506,12 +506,15 @@ export default function DeenPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {expandedDua === dua.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(dua.id); }}
-                    className="text-gray-500 hover:text-red-400 transition-colors"
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); deleteMutation.mutate(dua.id); } }}
+                    className="text-gray-500 hover:text-red-400 transition-colors cursor-pointer"
                   >
                     <X className="w-4 h-4" />
-                  </button>
+                  </div>
                 </div>
               </button>
               {expandedDua === dua.id && (

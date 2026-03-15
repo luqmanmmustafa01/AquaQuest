@@ -726,7 +726,7 @@ export default function Workouts() {
   const today = (new Date().getDay() + 6) % 7;
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-5 pb-20">
       {/* Completion Banner */}
       <AnimatePresence>
         {completionBanner && (
@@ -753,12 +753,12 @@ export default function Workouts() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-border/50 pb-4">
         <div>
-          <h1 className="text-4xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <Dumbbell className="w-8 h-8 text-primary" /> Workouts
+          <h1 className="text-3xl font-display font-bold text-white mb-1 flex items-center gap-2.5">
+            <Dumbbell className="w-7 h-7 text-primary" /> Workouts
           </h1>
-          <p className="text-muted-foreground">AI-powered personalized training plans.</p>
+          <p className="text-sm text-muted-foreground">AI-powered personalized training plans.</p>
         </div>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={openProfileQuiz} className="gap-2">
@@ -774,10 +774,10 @@ export default function Workouts() {
 
       {/* Streak + Tabs */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 glass-panel rounded-2xl px-5 py-3 border border-primary/20">
-          <Flame className="w-6 h-6 text-orange-400" />
-          <div>
-            <div className="text-2xl font-bold text-orange-400">{streak}</div>
+        <div className="flex items-center gap-2.5 glass-panel rounded-xl px-4 py-2 border border-primary/20">
+          <Flame className="w-4 h-4 text-orange-400" />
+          <div className="flex items-baseline gap-1.5">
+            <div className="text-lg font-bold text-orange-400">{streak}</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Day Streak</div>
           </div>
         </div>

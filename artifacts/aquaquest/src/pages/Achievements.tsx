@@ -23,12 +23,12 @@ export default function Achievements() {
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="border-b border-border/50 pb-6">
-        <h1 className="text-4xl font-display font-bold text-white mb-2 flex items-center gap-3">
-          <Trophy className="w-8 h-8 text-yellow-500" /> Hall of Fame
+    <div className="space-y-5 pb-20">
+      <div className="border-b border-border/50 pb-4">
+        <h1 className="text-3xl font-display font-bold text-white mb-1 flex items-center gap-2.5">
+          <Trophy className="w-7 h-7 text-yellow-500" /> Hall of Fame
         </h1>
-        <p className="text-muted-foreground">Milestones and accolades from your oceanic journey.</p>
+        <p className="text-sm text-muted-foreground">Milestones and accolades from your oceanic journey.</p>
       </div>
 
       {(!achievements || achievements.length === 0) ? (

@@ -88,14 +88,14 @@ export default function Goals() {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-5 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-border/50 pb-4">
         <div>
-          <h1 className="text-4xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <Target className="w-8 h-8 text-primary" /> Goals
+          <h1 className="text-3xl font-display font-bold text-white mb-1 flex items-center gap-2.5">
+            <Target className="w-7 h-7 text-primary" /> Goals
           </h1>
-          <p className="text-muted-foreground">Track your Fitness, Wellness, and Productivity goals.</p>
+          <p className="text-sm text-muted-foreground">Track your Fitness, Wellness, and Productivity goals.</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
           <Plus className="w-5 h-5" /> New Goal
@@ -103,7 +103,7 @@ export default function Goals() {
       </div>
 
       {/* Streak counters */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {([
           { key: "fitness",      label: "Fitness",      streak: fitnessStreak,      color: "#0E7490" },
           { key: "wellness",     label: "Wellness",     streak: wellnessStreak,     color: "#7C3AED" },
@@ -111,14 +111,18 @@ export default function Goals() {
         ] as const).map(({ key, label, streak, color }) => (
           <div
             key={key}
-            className="glass-panel rounded-2xl p-4 flex flex-col items-center gap-1 border cursor-pointer transition-all hover:scale-[1.02]"
+            className="glass-panel rounded-xl px-4 py-2.5 flex items-center gap-3 border cursor-pointer transition-all hover:scale-[1.01]"
             style={{ borderColor: color + "44", background: color + "0d" }}
             onClick={() => setCategoryFilter(categoryFilter === key ? "all" : key)}
           >
-            <Flame className="w-6 h-6" style={{ color }} />
-            <span className="text-2xl font-bold" style={{ color }}>{streak}</span>
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{label}</span>
-            <span className="text-[10px] text-muted-foreground/60">day streak</span>
+            <Flame className="w-4 h-4 shrink-0" style={{ color }} />
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold leading-none" style={{ color }}>{streak}</span>
+                <span className="text-[10px] text-muted-foreground/60">day streak</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">{label}</span>
+            </div>
           </div>
         ))}
       </div>

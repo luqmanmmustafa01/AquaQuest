@@ -65,11 +65,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         
-        <div className="p-6 relative z-10">
-          <div className="glass-panel p-4 rounded-2xl bg-gradient-to-b from-card/50 to-sidebar text-center border-primary/20 relative overflow-hidden group">
+        <div className="px-4 pb-4 relative z-10">
+          <div className="glass-panel px-3 py-2.5 rounded-xl bg-gradient-to-b from-card/50 to-sidebar text-center border-primary/20 relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">Depth Level</p>
-            <p className="text-3xl font-display font-bold text-primary text-glow">Deep Sea</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Depth Level</p>
+            <p className="text-xl font-display font-bold text-primary text-glow mt-0.5">Deep Sea</p>
           </div>
         </div>
       </aside>
@@ -123,7 +123,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="p-6 md:p-10 max-w-7xl mx-auto"
+          className="p-5 md:p-8 max-w-7xl mx-auto"
         >
           {children}
         </motion.div>
