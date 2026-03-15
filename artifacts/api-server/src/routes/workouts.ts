@@ -6,6 +6,13 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 
 const router = Router();
 
+function extractJson(text: string): unknown {
+  const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+  const start = stripped.search(/[\[{]/);
+  if (start === -1) throw new Error("No JSON found in AI response");
+  return JSON.parse(stripped.slice(start));
+}
+
 router.get("/profile", async (req, res) => {
   try {
     const profiles = await db.select().from(userProfiles).limit(1);
@@ -91,7 +98,7 @@ router.post("/generate", async (req, res) => {
 
     let plan: unknown;
     try {
-      plan = JSON.parse(block.text);
+      plan = extractJson(block.text);
     } catch {
       return res.status(500).json({ error: "parse_error", message: "Failed to parse AI response" });
     }
@@ -312,7 +319,7 @@ router.post("/regenerate-exercise", async (req, res) => {
     if (block.type !== "text") return res.status(500).json({ error: "ai_error" });
 
     let exercise: unknown;
-    try { exercise = JSON.parse(block.text); } catch {
+    try { exercise = extractJson(block.text); } catch {
       return res.status(500).json({ error: "parse_error", message: "Failed to parse AI response" });
     }
 
