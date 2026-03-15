@@ -106,9 +106,9 @@ export default function DashboardScreen() {
   const { data: _quests, isLoading: qLoading } = useGetQuests();
   const { data: _creatures, isLoading: cLoading } = useGetCreatures();
   const { data: _achievements, isLoading: aLoading } = useGetAchievements();
-  const quests = _quests ?? [];
-  const creatures = _creatures ?? [];
-  const achievements = _achievements ?? [];
+  const quests = Array.isArray(_quests) ? _quests : [];
+  const creatures = Array.isArray(_creatures) ? _creatures : [];
+  const achievements = Array.isArray(_achievements) ? _achievements : [];
 
   const pulse = useSharedValue(1);
   React.useEffect(() => {

@@ -100,7 +100,7 @@ export default function AchievementsScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const { data: _achievements, isLoading, refetch } = useGetAchievements();
-  const achievements = _achievements ?? [];
+  const achievements = Array.isArray(_achievements) ? _achievements : [];
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {

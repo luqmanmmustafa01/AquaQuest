@@ -189,7 +189,7 @@ export default function WorkoutsScreen() {
 
   const { data: profile, refetch: refetchProfile } = useGetWorkoutProfile();
   const { data: plans, refetch: refetchPlans } = useGetWorkoutPlans();
-  const latestPlan = plans && plans.length > 0 ? plans[plans.length - 1] : null;
+  const latestPlan = Array.isArray(plans) && plans.length > 0 ? plans[plans.length - 1] : null;
   const { data: logs, refetch: refetchLogs } = useGetWorkoutLogs(
     latestPlan?.id ?? 0,
     { query: { enabled: !!latestPlan } }
@@ -376,7 +376,7 @@ export default function WorkoutsScreen() {
                 day={day}
                 dayIndex={idx}
                 planId={latestPlan.id}
-                logs={(logs ?? []) as { dayIndex: number; exerciseName: string; completed: boolean }[]}
+                logs={(Array.isArray(logs) ? logs : []) as { dayIndex: number; exerciseName: string; completed: boolean }[]}
                 onToggle={handleToggleExercise}
               />
             ))}
