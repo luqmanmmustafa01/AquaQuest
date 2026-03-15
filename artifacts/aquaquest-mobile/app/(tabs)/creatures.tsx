@@ -86,11 +86,13 @@ function SummonAnimation({ results, totalStardustEarned, onClose }: {
   const chestRotate = React.useRef(new Animated.Value(0)).current;
   const burstScale = React.useRef(new Animated.Value(0)).current;
   const burstOpacity = React.useRef(new Animated.Value(0)).current;
-  const cardAnimations = results.map(() => ({
-    translateY: new Animated.Value(-100),
-    opacity: new Animated.Value(0),
-    scale: new Animated.Value(0.6),
-  }));
+  const cardAnimations = React.useRef(
+    results.map(() => ({
+      translateY: new Animated.Value(-100),
+      opacity: new Animated.Value(0),
+      scale: new Animated.Value(0.6),
+    }))
+  ).current;
 
   React.useEffect(() => {
     Animated.parallel([
