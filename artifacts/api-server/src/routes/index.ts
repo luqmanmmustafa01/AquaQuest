@@ -6,6 +6,7 @@ import achievementsRouter from "./achievements";
 import workoutsRouter from "./workouts";
 import currencyRouter from "./currency";
 import deenRouter from "./deen";
+import oceanSummonRouter from "./oceanSummon";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use("/achievements", achievementsRouter);
 router.use("/workouts", workoutsRouter);
 router.use("/currency", currencyRouter);
 router.use("/deen", deenRouter);
+router.use("/ocean-summon", oceanSummonRouter);
 
 export default router;

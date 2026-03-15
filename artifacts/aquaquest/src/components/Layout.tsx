@@ -9,7 +9,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/quests", label: "Goals", icon: Target },
   { href: "/workouts", label: "Workouts", icon: Dumbbell },
-  { href: "/creatures", label: "Creatures", icon: Fish },
+  { href: "/creatures", label: "Aquarium", icon: Fish },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/deen", label: "Deen", icon: Moon },
 ];

@@ -25,7 +25,17 @@ pnpm workspace monorepo using TypeScript. An ocean exploration quest-tracking ap
 ## Features
 
 - **Goals** (formerly Quests): View, create, update status (active/completed/failed), delete goals with category badges (Fitness/teal, Wellness/purple, Productivity/gold), type labels, streak counters, progress bars, and dual filters (category + type)
-- **Creatures**: Sea creature collection gallery with rarity badges (common → legendary)
+- **Aquarium** (formerly Creatures): Ocean Summon gacha system + fish collection
+  - **Ocean Summon**: Two banners — "Ocean Depths" (all rarities) and "Tidal Surge" (featured fish, boosted Legendary 5%)
+  - Pull costs: 1x = 1 Spin Ticket or 100 Coins; 10x = 8 Spin Tickets or 800 Coins
+  - Rarity rates: Common 60% / Rare 25% / Epic 12% / Legendary 2.75% / Mythical 0.25% (true random, no pity)
+  - Pity system: guaranteed Epic+ every 50 pulls, guaranteed Legendary every 100 pulls; tracked per user in DB
+  - 24 fish seeded across 5 rarities; featured fish (Anglerfish) boosted on Tidal Surge banner
+  - Duplicate fish → 10 Stardust each
+  - Summon animation: chest shake → light burst → rarity-glowing fish cards fan out (1x: single card; 10x: grid fan)
+  - **My Collection**: filterable grid with rarity glow borders/colors, total fish count, stardust balance
+  - **Stardust Shop**: 100 ✨ Stardust → 1 🎟️ Spin Ticket
+  - All pull logic runs server-side; frontend only sends banner/count/currency
 - **Achievements**: Achievement panel with category badges and unlock status
 - **Dashboard**: Overview of active goals, stats, and progress
 - **Workouts** (redesigned, web + mobile):
@@ -65,7 +75,8 @@ artifacts-monorepo/
 │           ├── creatures.ts    # Sea creatures table (rarity, depth, emoji)
 │           ├── achievements.ts # Achievements table (category, unlocked_at)
 │           ├── workouts.ts     # user_profiles (+ workout_streak), workout_plans, workout_logs, workout_completions
-│           └── deen.ts         # user_currency, duas, deen_progress tables
+│           ├── deen.ts         # user_currency, duas, deen_progress tables
+│           └── ocean.ts        # fish_pool, user_fish, ocean_summons, user_stardust, user_summon_pity
 └── scripts/
 ```
 
@@ -87,7 +98,12 @@ artifacts-monorepo/
 - `POST /api/workouts/complete-day` — Complete a workout day (awards 50 Coins, 3 Gems, 2 Spin Tickets, increments streak)
 - `GET /api/workouts/completions` — Get all completed workout days
 - `POST /api/workouts/regenerate-exercise` — AI-regenerate a single exercise in the plan
-- `GET /api/creatures` — List discovered creatures
+- `GET /api/creatures` — List discovered creatures (old compendium)
+- `GET /api/ocean-summon/pool` — All active fish in the pool
+- `GET /api/ocean-summon/collection` — User's collected fish + stardust + pity counters
+- `GET /api/ocean-summon/stardust` — User's stardust balance
+- `POST /api/ocean-summon/pull` — Perform summon pull (banner, count 1|10, currency tickets|coins); full server-side logic including pity, deduplication, stardust, currency deduction
+- `POST /api/ocean-summon/stardust-shop` — Spend 100 Stardust to get 1 Spin Ticket
 - `GET /api/achievements` — List achievements
 - `GET/PATCH /api/currency` — User currency (coins, gems, spin tickets)
 - `GET/PATCH /api/deen/progress?date=YYYY-MM-DD` — Today's Deen progress
