@@ -324,8 +324,14 @@ export default function Creatures() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ banner, count, currency }),
       });
+      if (!res.ok) {
+        let errMsg = `Request failed (${res.status})`;
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+        setError(errMsg);
+        setPulling(false);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Summon failed."); setPulling(false); return; }
       setSummonResult({ results: data.results, totalStardustEarned: data.totalStardustEarned });
     } catch (_) {
       setError("Network error. Please try again.");
@@ -341,9 +347,15 @@ export default function Creatures() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "buy_ticket" }),
       });
+      if (!res.ok) {
+        let errMsg = `Request failed (${res.status})`;
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+        setShopMsg(errMsg);
+        return;
+      }
       const data = await res.json();
-      setShopMsg(data.error ?? data.message ?? "Done.");
-      if (res.ok) fetchCollection();
+      setShopMsg(data.message ?? "Done.");
+      fetchCollection();
     } catch (_) { setShopMsg("Network error."); }
   };
 
