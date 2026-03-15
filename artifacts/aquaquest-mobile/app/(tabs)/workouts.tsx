@@ -1,4 +1,3 @@
-import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
@@ -312,8 +311,6 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <CurrencyHeader />
-
       {/* Completion Banner */}
       {showBanner && bannerData && (
         <View style={styles.banner}>
