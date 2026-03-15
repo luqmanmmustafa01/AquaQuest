@@ -29,7 +29,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 
-const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const _rawDomain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const BASE_URL = _rawDomain
+  ? _rawDomain.startsWith("http") ? _rawDomain : `https://${_rawDomain}`
+  : "";
 const isIOS = Platform.OS === "ios";
 
 type ExperienceLevel = "beginner" | "intermediate" | "advanced";

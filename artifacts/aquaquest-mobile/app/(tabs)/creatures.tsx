@@ -20,7 +20,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 
-const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const _rawDomain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const BASE_URL = _rawDomain
+  ? _rawDomain.startsWith("http") ? _rawDomain : `https://${_rawDomain}`
+  : "";
 const { width: SCREEN_W } = Dimensions.get("window");
 
 const RARITY_CONFIG: Record<string, { color: string; label: string; glowHex: string }> = {
@@ -374,12 +377,14 @@ export default function CreaturesScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ banner, count, currency }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Summon failed.");
+        let errMsg = `Request failed (${res.status})`;
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+        setError(errMsg);
         setPulling(false);
         return;
       }
+      const data = await res.json();
       setSummonResults(Array.isArray(data.results) ? data.results : []);
       setTotalStardust(data.totalStardustEarned ?? 0);
       setSummonModalVisible(true);
@@ -402,9 +407,15 @@ export default function CreaturesScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "buy_ticket" }),
       });
+      if (!res.ok) {
+        let errMsg = `Request failed (${res.status})`;
+        try { const e = await res.json(); errMsg = e.error ?? errMsg; } catch (_) {}
+        setShopMsg(errMsg);
+        return;
+      }
       const data = await res.json();
-      setShopMsg(data.error ?? data.message ?? "Done.");
-      if (res.ok) fetchCollection();
+      setShopMsg(data.message ?? "Done.");
+      fetchCollection();
     } catch (_) { setShopMsg("Network error."); }
   };
 

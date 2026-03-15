@@ -18,7 +18,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { CurrencyHeader } from "@/components/CurrencyHeader";
 
-const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const _rawDomain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+const BASE_URL = _rawDomain
+  ? _rawDomain.startsWith("http") ? _rawDomain : `https://${_rawDomain}`
+  : "";
 
 /* ─── Hadiths ─── */
 const HADITHS = [
