@@ -37,8 +37,9 @@ type QuizForm = {
   weight: string;
   goal: string;
   experienceLevel: string;
+  workoutDays: string[];
   liftingCapacity: string;
-  injuries: string[];
+  injuries: string;
 };
 
 const MUSCLE_COLORS: Record<string, string> = {
@@ -59,7 +60,9 @@ const EXP_OPTIONS = [
   { value: "intermediate", label: "Intermediate", desc: "1–3 years of training" },
   { value: "advanced", label: "Advanced", desc: "3+ years of training" },
 ];
-const INJURY_OPTIONS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
+const WORKOUT_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WORKOUT_DAYS_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const INJURY_CHIPS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -255,8 +258,9 @@ const QUIZ_STEPS = [
   { key: "weight", title: "What's your body weight?", sub: null, optional: false },
   { key: "goal", title: "What's your fitness goal?", sub: null, optional: false },
   { key: "experienceLevel", title: "What's your experience level?", sub: null, optional: false },
+  { key: "workoutDays", title: "Which days do you want to train?", sub: "Optional – the AI will make all other days Rest days", optional: true },
   { key: "liftingCapacity", title: "What weights do you have access to?", sub: "Optional – helps the AI tailor exercises to your equipment", optional: true },
-  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – these areas will be avoided in your plan", optional: true },
+  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – describe what to avoid and the AI will work around it", optional: true },
 ];
 
 function ProfileQuiz({
@@ -368,6 +372,39 @@ function ProfileQuiz({
         );
       case 5:
         return (
+          <div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {WORKOUT_DAYS.map((day, i) => (
+                <button
+                  key={day}
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      workoutDays: f.workoutDays.includes(day)
+                        ? f.workoutDays.filter((d) => d !== day)
+                        : [...f.workoutDays, day],
+                    }))
+                  }
+                  className={cn(
+                    "py-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1",
+                    form.workoutDays.includes(day)
+                      ? "border-primary bg-primary/20 text-white shadow-[0_0_10px_rgba(14,116,144,0.25)]"
+                      : "border-border/40 bg-card/40 text-muted-foreground hover:border-primary/30 hover:text-white"
+                  )}
+                >
+                  {WORKOUT_DAYS_ABBR[i]}
+                </button>
+              ))}
+            </div>
+            {form.workoutDays.length > 0 && (
+              <p className="text-xs text-primary/80 mt-3 text-center">
+                {form.workoutDays.length} training day{form.workoutDays.length !== 1 ? "s" : ""} selected
+              </p>
+            )}
+          </div>
+        );
+      case 6:
+        return (
           <Input
             autoFocus
             placeholder="e.g. Dumbbells up to 50lbs, barbell, bodyweight only"
@@ -377,36 +414,39 @@ function ProfileQuiz({
             className="h-14 bg-[#0A1628] border-primary/30 text-white"
           />
         );
-      case 6:
+      case 7:
         return (
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {INJURY_OPTIONS.map((inj) => (
+            <textarea
+              autoFocus
+              rows={4}
+              placeholder={"e.g. Torn ACL in left knee – avoid deep squats and lunges; shoulder impingement – no overhead pressing"}
+              value={form.injuries}
+              onChange={(e) => setForm((f) => ({ ...f, injuries: e.target.value }))}
+              className="w-full rounded-xl border border-primary/30 bg-[#0A1628] text-white px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {INJURY_CHIPS.map((chip) => (
                 <button
-                  key={inj}
+                  key={chip}
                   onClick={() =>
                     setForm((f) => ({
                       ...f,
-                      injuries: f.injuries.includes(inj)
-                        ? f.injuries.filter((i) => i !== inj)
-                        : [...f.injuries, inj],
+                      injuries: f.injuries
+                        ? f.injuries.trimEnd() + (f.injuries.endsWith(",") ? " " : ", ") + chip.toLowerCase()
+                        : chip.toLowerCase(),
                     }))
                   }
-                  className={cn(
-                    "px-4 py-2 rounded-xl border text-sm font-semibold transition-all",
-                    form.injuries.includes(inj)
-                      ? "border-red-500/60 bg-red-500/15 text-red-400"
-                      : "border-border/50 bg-card/50 text-muted-foreground hover:border-primary/30 hover:text-white"
-                  )}
+                  className="text-xs px-3 py-1 rounded-lg border border-border/40 text-muted-foreground hover:border-primary/40 hover:text-white transition-colors"
                 >
-                  {inj}
+                  + {chip}
                 </button>
               ))}
             </div>
-            {form.injuries.length > 0 && (
+            {form.injuries && (
               <div className="flex items-center gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2">
                 <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                The AI will avoid exercises that stress: {form.injuries.join(", ")}
+                The AI will avoid movements that aggravate these areas.
               </div>
             )}
           </div>
@@ -506,7 +546,7 @@ export default function Workouts() {
   const [generating, setGenerating] = useState(false);
   const [quizSaving, setQuizSaving] = useState(false);
   const [completionBanner, setCompletionBanner] = useState<null | { coins: number; gems: number; spinTickets: number; workoutStreak: number }>(null);
-  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", workoutDays: [], liftingCapacity: "", injuries: "" });
   const [exerciseWeights, setExerciseWeights] = useState<Record<string, string>>({});
 
   const { data: profile, isLoading: profileLoading } = useGetWorkoutProfile({ query: { retry: false } });
@@ -539,11 +579,12 @@ export default function Workouts() {
         weight: p.weight ?? "",
         goal: p.goal ?? "",
         experienceLevel: p.experienceLevel ?? "beginner",
+        workoutDays: Array.isArray(p.workoutDays) ? p.workoutDays : [],
         liftingCapacity: p.liftingCapacity ?? "",
-        injuries: Array.isArray(p.injuries) ? p.injuries : [],
+        injuries: Array.isArray(p.injuries) ? p.injuries.join(", ") : (p.injuries ?? ""),
       });
     } else {
-      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", workoutDays: [], liftingCapacity: "", injuries: "" });
     }
     setProfileOpen(true);
   };
@@ -625,8 +666,9 @@ export default function Workouts() {
           weight: form.weight,
           goal: form.goal,
           experienceLevel: form.experienceLevel as any,
+          workoutDays: form.workoutDays,
           liftingCapacity: form.liftingCapacity || undefined,
-          injuries: form.injuries,
+          injuries: form.injuries ? [form.injuries] : [],
         } as any,
       });
       await queryClient.invalidateQueries({ queryKey: getGetWorkoutProfileQueryKey() });

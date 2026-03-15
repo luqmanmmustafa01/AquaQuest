@@ -29,6 +29,7 @@ router.get("/profile", async (req, res) => {
       experienceLevel: p.experienceLevel,
       liftingCapacity: p.liftingCapacity ?? "",
       injuries: Array.isArray(p.injuries) ? p.injuries : [],
+      workoutDays: Array.isArray(p.workoutDays) ? p.workoutDays : [],
       workoutStreak: p.workoutStreak,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
@@ -40,13 +41,14 @@ router.get("/profile", async (req, res) => {
 
 router.post("/profile", async (req, res) => {
   try {
-    const { age, height, weight, goal, experienceLevel, liftingCapacity, injuries } = req.body;
+    const { age, height, weight, goal, experienceLevel, liftingCapacity, injuries, workoutDays } = req.body;
     const injuriesArr = Array.isArray(injuries) ? injuries : [];
+    const workoutDaysArr = Array.isArray(workoutDays) ? workoutDays : [];
     const existing = await db.select().from(userProfiles).limit(1);
     if (existing.length > 0) {
       const updated = await db
         .update(userProfiles)
-        .set({ age, height, weight, goal, experienceLevel, liftingCapacity: liftingCapacity || null, injuries: injuriesArr, updatedAt: new Date() })
+        .set({ age, height, weight, goal, experienceLevel, liftingCapacity: liftingCapacity || null, injuries: injuriesArr, workoutDays: workoutDaysArr, updatedAt: new Date() })
         .where(eq(userProfiles.id, existing[0].id))
         .returning();
       const p = updated[0];
@@ -55,13 +57,14 @@ router.post("/profile", async (req, res) => {
         goal: p.goal, experienceLevel: p.experienceLevel,
         liftingCapacity: p.liftingCapacity ?? "",
         injuries: Array.isArray(p.injuries) ? p.injuries : [],
+        workoutDays: Array.isArray(p.workoutDays) ? p.workoutDays : [],
         workoutStreak: p.workoutStreak,
         createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString(),
       });
     }
     const inserted = await db
       .insert(userProfiles)
-      .values({ age, height, weight, goal, experienceLevel, liftingCapacity: liftingCapacity || null, injuries: injuriesArr })
+      .values({ age, height, weight, goal, experienceLevel, liftingCapacity: liftingCapacity || null, injuries: injuriesArr, workoutDays: workoutDaysArr })
       .returning();
     const p = inserted[0];
     return res.json({
@@ -69,6 +72,7 @@ router.post("/profile", async (req, res) => {
       goal: p.goal, experienceLevel: p.experienceLevel,
       liftingCapacity: p.liftingCapacity ?? "",
       injuries: Array.isArray(p.injuries) ? p.injuries : [],
+      workoutDays: Array.isArray(p.workoutDays) ? p.workoutDays : [],
       workoutStreak: p.workoutStreak,
       createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString(),
     });
@@ -85,11 +89,15 @@ router.post("/generate", async (req, res) => {
     }
     const profile = profiles[0];
     const injuries = Array.isArray(profile.injuries) ? profile.injuries as string[] : [];
+    const workoutDays = Array.isArray(profile.workoutDays) ? profile.workoutDays as string[] : [];
     const injuryNote = injuries.length > 0
-      ? `IMPORTANT: The user has the following injuries/restrictions and must avoid exercises that stress these areas: ${injuries.join(", ")}.`
+      ? `IMPORTANT: The user has the following injuries/restrictions and must avoid exercises that stress these areas: ${injuries.join("; ")}.`
       : "";
     const liftingNote = profile.liftingCapacity
       ? `Available equipment/weights: ${profile.liftingCapacity}.`
+      : "";
+    const daysNote = workoutDays.length > 0
+      ? `IMPORTANT: The user wants to train ONLY on: ${workoutDays.join(", ")}. Every other day of the week MUST be a Rest day with an empty exercises array.`
       : "";
 
     const message = await anthropic.messages.create({
@@ -100,7 +108,7 @@ router.post("/generate", async (req, res) => {
       messages: [
         {
           role: "user",
-          content: `Generate a personalized 7-day workout plan for this user: Age: ${profile.age}, Height: ${profile.height}, Weight: ${profile.weight}, Goal: ${profile.goal}, Experience level: ${profile.experienceLevel}. ${liftingNote} ${injuryNote} Return a JSON array of 7 objects. Each object must have: "day" (e.g. "Monday"), "focus" (e.g. "Upper Body Strength" or "Rest"), "exercises" (array of objects with: "name", "muscleGroup" (e.g. "Chest", "Back", "Shoulders", "Biceps", "Triceps", "Legs", "Core", "Glutes", "Cardio"), "sets" (number), "reps" (string like "10-12"), "rest" (string like "60 seconds"), "formGuide" (array of 4-5 strings describing proper form step by step), "notes" (optional string)). Rest days should have focus "Rest" and an empty exercises array.`,
+          content: `Generate a personalized 7-day workout plan for this user: Age: ${profile.age}, Height: ${profile.height}, Weight: ${profile.weight}, Goal: ${profile.goal}, Experience level: ${profile.experienceLevel}. ${liftingNote} ${daysNote} ${injuryNote} Return a JSON array of exactly 7 objects in order Monday through Sunday. Each object must have: "day" (e.g. "Monday"), "focus" (e.g. "Upper Body Strength" or "Rest"), "exercises" (array of objects with: "name", "muscleGroup" (e.g. "Chest", "Back", "Shoulders", "Biceps", "Triceps", "Legs", "Core", "Glutes", "Cardio"), "sets" (number), "reps" (string like "10-12"), "rest" (string like "60 seconds"), "formGuide" (array of 4-5 strings describing proper form step by step), "notes" (optional string)). Rest days should have focus "Rest" and an empty exercises array.`,
         },
       ],
     });

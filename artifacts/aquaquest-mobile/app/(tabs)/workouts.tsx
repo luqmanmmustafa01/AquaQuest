@@ -64,8 +64,9 @@ type QuizForm = {
   weight: string;
   goal: string;
   experienceLevel: ExperienceLevel;
+  workoutDays: string[];
   liftingCapacity: string;
-  injuries: string[];
+  injuries: string;
 };
 
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -76,7 +77,9 @@ const EXP_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] = [
   { value: "intermediate", label: "Intermediate", desc: "1–3 years of training" },
   { value: "advanced", label: "Advanced", desc: "3+ years of training" },
 ];
-const INJURY_OPTIONS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
+const WORKOUT_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WORKOUT_DAYS_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const INJURY_CHIPS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
 
 const MUSCLE_COLORS: Record<string, string> = {
   Chest: "#3B82F6", Back: "#A855F7", Shoulders: "#F59E0B",
@@ -249,8 +252,9 @@ const QUIZ_STEPS = [
   { key: "weight", title: "What's your body weight?", sub: null, optional: false },
   { key: "goal", title: "What's your fitness goal?", sub: null, optional: false },
   { key: "experienceLevel", title: "What's your experience level?", sub: null, optional: false },
+  { key: "workoutDays", title: "Which days to train?", sub: "Optional – AI makes all others Rest days", optional: true },
   { key: "liftingCapacity", title: "What weights do you have access to?", sub: "Optional – helps the AI tailor exercises", optional: true },
-  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – these areas will be avoided", optional: true },
+  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – describe what to avoid", optional: true },
 ];
 
 function ProfileQuiz({
@@ -288,13 +292,6 @@ function ProfileQuiz({
 
   const goNext = () => { if (step < total - 1) setStep((s) => s + 1); };
   const goBack = () => { if (step > 0) setStep((s) => s - 1); };
-
-  const toggleInjury = (inj: string) => {
-    setForm((f) => ({
-      ...f,
-      injuries: f.injuries.includes(inj) ? f.injuries.filter((i) => i !== inj) : [...f.injuries, inj],
-    }));
-  };
 
   const renderStepContent = () => {
     switch (step) {
@@ -372,6 +369,39 @@ function ProfileQuiz({
         );
       case 5:
         return (
+          <View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {WORKOUT_DAYS.map((day, i) => (
+                <Pressable
+                  key={day}
+                  style={[
+                    styles.dayPickerBtn,
+                    form.workoutDays.includes(day) && styles.dayPickerBtnActive,
+                  ]}
+                  onPress={() =>
+                    setForm((f) => ({
+                      ...f,
+                      workoutDays: f.workoutDays.includes(day)
+                        ? f.workoutDays.filter((d) => d !== day)
+                        : [...f.workoutDays, day],
+                    }))
+                  }
+                >
+                  <Text style={[styles.dayPickerText, form.workoutDays.includes(day) && styles.dayPickerTextActive]}>
+                    {WORKOUT_DAYS_ABBR[i]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {form.workoutDays.length > 0 && (
+              <Text style={{ color: Colors.teal, fontSize: 12, textAlign: "center", marginTop: 10 }}>
+                {form.workoutDays.length} training day{form.workoutDays.length !== 1 ? "s" : ""} selected
+              </Text>
+            )}
+          </View>
+        );
+      case 6:
+        return (
           <TextInput
             style={[styles.quizInput, { fontSize: 14 }]}
             placeholder="e.g. Dumbbells up to 50lbs, barbell, bodyweight"
@@ -381,24 +411,41 @@ function ProfileQuiz({
             autoFocus
           />
         );
-      case 6:
+      case 7:
         return (
           <View>
-            <View style={styles.injuryGrid}>
-              {INJURY_OPTIONS.map((inj) => (
+            <TextInput
+              style={[styles.quizInput, { fontSize: 13, height: 100, textAlignVertical: "top", paddingTop: 10 }]}
+              placeholder={"e.g. Torn ACL – avoid squats; shoulder impingement – no overhead press"}
+              placeholderTextColor={Colors.textDim}
+              value={form.injuries}
+              onChangeText={(v) => setForm((f) => ({ ...f, injuries: v }))}
+              multiline
+              numberOfLines={4}
+              autoFocus
+            />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+              {INJURY_CHIPS.map((chip) => (
                 <Pressable
-                  key={inj}
-                  style={[styles.injuryBtn, form.injuries.includes(inj) && styles.injuryBtnActive]}
-                  onPress={() => toggleInjury(inj)}
+                  key={chip}
+                  style={styles.injuryChipBtn}
+                  onPress={() =>
+                    setForm((f) => ({
+                      ...f,
+                      injuries: f.injuries
+                        ? f.injuries.trimEnd() + (f.injuries.endsWith(",") ? " " : ", ") + chip.toLowerCase()
+                        : chip.toLowerCase(),
+                    }))
+                  }
                 >
-                  <Text style={[styles.injuryBtnText, form.injuries.includes(inj) && styles.injuryBtnTextActive]}>{inj}</Text>
+                  <Text style={styles.injuryChipText}>+ {chip}</Text>
                 </Pressable>
               ))}
             </View>
-            {form.injuries.length > 0 && (
+            {!!form.injuries && (
               <View style={styles.injuryNote}>
                 <Ionicons name="warning-outline" size={13} color="#F59E0B" />
-                <Text style={styles.injuryNoteText}>AI will avoid: {form.injuries.join(", ")}</Text>
+                <Text style={styles.injuryNoteText}>AI will work around these restrictions.</Text>
               </View>
             )}
           </View>
@@ -478,7 +525,7 @@ export default function WorkoutsScreen() {
   const [planData, setPlanData] = useState<WorkoutDay[] | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerData, setBannerData] = useState<{ workoutStreak: number } | null>(null);
-  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", workoutDays: [], liftingCapacity: "", injuries: "" });
   const [exerciseWeights, setExerciseWeights] = useState<Record<string, string>>({});
 
   const { data: profile, refetch: refetchProfile } = useGetWorkoutProfile();
@@ -516,11 +563,12 @@ export default function WorkoutsScreen() {
         weight: p.weight ?? "",
         goal: p.goal ?? "",
         experienceLevel: p.experienceLevel ?? "beginner",
+        workoutDays: Array.isArray(p.workoutDays) ? p.workoutDays : [],
         liftingCapacity: p.liftingCapacity ?? "",
-        injuries: Array.isArray(p.injuries) ? p.injuries : [],
+        injuries: Array.isArray(p.injuries) ? p.injuries.join(", ") : (p.injuries ?? ""),
       });
     } else {
-      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", workoutDays: [], liftingCapacity: "", injuries: "" });
     }
     setProfileModalVisible(true);
   };
@@ -607,8 +655,9 @@ export default function WorkoutsScreen() {
           weight: form.weight,
           goal: form.goal,
           experienceLevel: form.experienceLevel,
+          workoutDays: form.workoutDays,
           liftingCapacity: form.liftingCapacity || undefined,
-          injuries: form.injuries,
+          injuries: form.injuries ? [form.injuries] : [],
         } as any,
       });
       await refetchProfile();
@@ -937,6 +986,12 @@ const styles = StyleSheet.create({
   injuryBtnTextActive: { color: "#F87171" },
   injuryNote: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#F59E0B10", borderWidth: 1, borderColor: "#F59E0B33", borderRadius: 10, padding: 10, marginTop: 10 },
   injuryNoteText: { color: "#F59E0B", fontSize: 12, flex: 1 },
+  dayPickerBtn: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: "#FFFFFF20", backgroundColor: "#FFFFFF08", alignItems: "center", minWidth: 44 },
+  dayPickerBtnActive: { borderColor: Colors.teal, backgroundColor: `${Colors.teal}22` },
+  dayPickerText: { color: Colors.textDim, fontWeight: "700", fontSize: 12 },
+  dayPickerTextActive: { color: Colors.white },
+  injuryChipBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: "#FFFFFF18", backgroundColor: "#FFFFFF06" },
+  injuryChipText: { color: Colors.textDim, fontSize: 12 },
   quizNav: { flexDirection: "row", gap: 10, marginTop: 24 },
   quizBackBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: "#FFFFFF20" },
   quizBackText: { color: Colors.textDim, fontWeight: "600", fontSize: 14 },
