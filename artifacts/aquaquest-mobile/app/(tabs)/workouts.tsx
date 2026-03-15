@@ -11,7 +11,7 @@ import {
   RefreshControl,
   Alert,
   Platform,
-  FlatList,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -58,32 +58,45 @@ type Completion = {
   completedAt: string;
 };
 
+type QuizForm = {
+  age: string;
+  height: string;
+  weight: string;
+  goal: string;
+  experienceLevel: ExperienceLevel;
+  liftingCapacity: string;
+  injuries: string[];
+};
+
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-const EXP_LEVELS: { value: ExperienceLevel; label: string }[] = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+const GOAL_OPTIONS = ["Build Muscle", "Lose Weight", "Improve Endurance", "Get Stronger", "Improve Flexibility", "Stay Active"];
+const EXP_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] = [
+  { value: "beginner", label: "Beginner", desc: "< 1 year of training" },
+  { value: "intermediate", label: "Intermediate", desc: "1–3 years of training" },
+  { value: "advanced", label: "Advanced", desc: "3+ years of training" },
 ];
+const INJURY_OPTIONS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
 
 const MUSCLE_COLORS: Record<string, string> = {
-  Chest: "#3B82F6",
-  Back: "#A855F7",
-  Shoulders: "#F59E0B",
-  Biceps: "#22C88A",
-  Triceps: "#10B981",
-  Legs: "#F97316",
-  Core: "#0E7490",
-  Glutes: "#EC4899",
-  Cardio: "#EF4444",
+  Chest: "#3B82F6", Back: "#A855F7", Shoulders: "#F59E0B",
+  Biceps: "#22C88A", Triceps: "#10B981", Legs: "#F97316",
+  Core: "#0E7490", Glutes: "#EC4899", Cardio: "#EF4444",
 };
 
 function getMuscleColor(m?: string): string {
   return MUSCLE_COLORS[m ?? ""] ?? Colors.teal;
 }
 
+function parseRestSeconds(rest: string): number {
+  const m = rest.match(/(\d+)/);
+  if (!m) return 60;
+  const n = parseInt(m[1]);
+  return rest.toLowerCase().includes("min") ? n * 60 : n;
+}
+
 function ExerciseCard({
-  exercise, dayIndex, planId, logs, onToggle, onRegenerate,
+  exercise, dayIndex, planId, logs, onToggle, onRegenerate, weight, onWeightChange,
 }: {
   exercise: Exercise;
   dayIndex: number;
@@ -91,11 +104,41 @@ function ExerciseCard({
   logs: { exerciseName: string; completed: boolean }[];
   onToggle: (name: string, completed: boolean) => void;
   onRegenerate: (name: string, muscleGroup?: string) => void;
+  weight: string;
+  onWeightChange: (name: string, weight: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerProgress = useRef(new Animated.Value(1)).current;
   const done = logs.find((l) => l.exerciseName === exercise.name)?.completed ?? false;
   const mc = getMuscleColor(exercise.muscleGroup);
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const startRestTimer = (totalSecs: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setRestTimer(totalSecs);
+    timerProgress.setValue(1);
+    Animated.timing(timerProgress, { toValue: 0, duration: totalSecs * 1000, useNativeDriver: false }).start();
+    timerRef.current = setInterval(() => {
+      setRestTimer((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const skipTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerProgress.stopAnimation();
+    setRestTimer(null);
+  };
 
   const handleRegen = async () => {
     setRegenerating(true);
@@ -103,15 +146,19 @@ function ExerciseCard({
     setRegenerating(false);
   };
 
+  const handleToggle = (name: string, completed: boolean) => {
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+    onToggle(name, completed);
+    if (completed) startRestTimer(parseRestSeconds(exercise.rest));
+    else skipTimer();
+  };
+
   return (
     <View style={[styles.exCard, done && styles.exCardDone]}>
       <View style={styles.exCardTop}>
         <Pressable
           style={[styles.exCheckbox, done && { backgroundColor: Colors.success, borderColor: Colors.success }]}
-          onPress={() => {
-            if (Platform.OS !== "web") Haptics.selectionAsync();
-            onToggle(exercise.name, !done);
-          }}
+          onPress={() => handleToggle(exercise.name, !done)}
         >
           {done && (isIOS
             ? <SymbolView name="checkmark" size={11} tintColor={Colors.navy} />
@@ -124,6 +171,32 @@ function ExerciseCard({
           <View style={styles.exMeta}>
             <Text style={styles.exReps}>{exercise.sets} × {exercise.reps}</Text>
             <Text style={styles.exRest}>• {exercise.rest} rest</Text>
+          </View>
+
+          {/* Rest timer */}
+          {restTimer !== null && (
+            <View style={styles.restTimerRow}>
+              <Ionicons name="timer-outline" size={13} color={Colors.teal} />
+              <Text style={styles.restTimerText}>Rest: {restTimer}s</Text>
+              <View style={styles.restTimerBar}>
+                <Animated.View style={[styles.restTimerFill, { width: timerProgress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) as any }]} />
+              </View>
+              <Pressable onPress={skipTimer}>
+                <Text style={styles.skipText}>skip</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Weight input */}
+          <View style={styles.weightRow}>
+            <Text style={styles.weightLabel}>Weight used:</Text>
+            <TextInput
+              style={styles.weightInput}
+              placeholder="e.g. 50lbs"
+              placeholderTextColor={Colors.textDim}
+              value={weight}
+              onChangeText={(v) => onWeightChange(exercise.name, v)}
+            />
           </View>
         </View>
 
@@ -170,6 +243,226 @@ function ExerciseCard({
   );
 }
 
+const QUIZ_STEPS = [
+  { key: "age", title: "How old are you?", sub: null as string | null, optional: false },
+  { key: "height", title: "What's your height?", sub: null, optional: false },
+  { key: "weight", title: "What's your body weight?", sub: null, optional: false },
+  { key: "goal", title: "What's your fitness goal?", sub: null, optional: false },
+  { key: "experienceLevel", title: "What's your experience level?", sub: null, optional: false },
+  { key: "liftingCapacity", title: "What weights do you have access to?", sub: "Optional – helps the AI tailor exercises", optional: true },
+  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – these areas will be avoided", optional: true },
+];
+
+function ProfileQuiz({
+  visible,
+  initialForm,
+  onSave,
+  onClose,
+  saving,
+}: {
+  visible: boolean;
+  initialForm: QuizForm;
+  onSave: (form: QuizForm) => Promise<void>;
+  onClose: () => void;
+  saving: boolean;
+}) {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<QuizForm>(initialForm);
+  const total = QUIZ_STEPS.length;
+  const current = QUIZ_STEPS[step];
+
+  useEffect(() => {
+    if (visible) { setStep(0); setForm(initialForm); }
+  }, [visible]);
+
+  const canAdvance = () => {
+    if (current.optional) return true;
+    switch (step) {
+      case 0: return form.age !== "" && !isNaN(Number(form.age)) && Number(form.age) > 0;
+      case 1: return form.height.trim() !== "";
+      case 2: return form.weight.trim() !== "";
+      case 3: return form.goal.trim() !== "";
+      default: return true;
+    }
+  };
+
+  const goNext = () => { if (step < total - 1) setStep((s) => s + 1); };
+  const goBack = () => { if (step > 0) setStep((s) => s - 1); };
+
+  const toggleInjury = (inj: string) => {
+    setForm((f) => ({
+      ...f,
+      injuries: f.injuries.includes(inj) ? f.injuries.filter((i) => i !== inj) : [...f.injuries, inj],
+    }));
+  };
+
+  const renderStepContent = () => {
+    switch (step) {
+      case 0:
+        return (
+          <TextInput
+            style={[styles.quizInput, { textAlign: "center", fontSize: 28 }]}
+            placeholder="e.g. 28"
+            placeholderTextColor={Colors.textDim}
+            keyboardType="numeric"
+            value={form.age}
+            onChangeText={(v) => setForm((f) => ({ ...f, age: v }))}
+            autoFocus
+          />
+        );
+      case 1:
+        return (
+          <TextInput
+            style={[styles.quizInput, { textAlign: "center", fontSize: 20 }]}
+            placeholder={"5'10\" or 178cm"}
+            placeholderTextColor={Colors.textDim}
+            value={form.height}
+            onChangeText={(v) => setForm((f) => ({ ...f, height: v }))}
+            autoFocus
+          />
+        );
+      case 2:
+        return (
+          <TextInput
+            style={[styles.quizInput, { textAlign: "center", fontSize: 20 }]}
+            placeholder="170lbs or 77kg"
+            placeholderTextColor={Colors.textDim}
+            value={form.weight}
+            onChangeText={(v) => setForm((f) => ({ ...f, weight: v }))}
+            autoFocus
+          />
+        );
+      case 3:
+        return (
+          <View>
+            <View style={styles.goalGrid}>
+              {GOAL_OPTIONS.map((g) => (
+                <Pressable
+                  key={g}
+                  style={[styles.goalBtn, form.goal === g && styles.goalBtnActive]}
+                  onPress={() => { setForm((f) => ({ ...f, goal: g })); setTimeout(goNext, 180); }}
+                >
+                  <Text style={[styles.goalBtnText, form.goal === g && styles.goalBtnTextActive]}>{g}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={[styles.quizInput, { marginTop: 10, fontSize: 14 }]}
+              placeholder="Or type your own goal..."
+              placeholderTextColor={Colors.textDim}
+              value={GOAL_OPTIONS.includes(form.goal) ? "" : form.goal}
+              onChangeText={(v) => setForm((f) => ({ ...f, goal: v }))}
+            />
+          </View>
+        );
+      case 4:
+        return (
+          <View style={{ gap: 10 }}>
+            {EXP_OPTIONS.map((e) => (
+              <Pressable
+                key={e.value}
+                style={[styles.expBtn, form.experienceLevel === e.value && styles.expBtnActive]}
+                onPress={() => { setForm((f) => ({ ...f, experienceLevel: e.value })); setTimeout(goNext, 180); }}
+              >
+                <Text style={[styles.expBtnLabel, form.experienceLevel === e.value && { color: Colors.white }]}>{e.label}</Text>
+                <Text style={styles.expBtnDesc}>{e.desc}</Text>
+              </Pressable>
+            ))}
+          </View>
+        );
+      case 5:
+        return (
+          <TextInput
+            style={[styles.quizInput, { fontSize: 14 }]}
+            placeholder="e.g. Dumbbells up to 50lbs, barbell, bodyweight"
+            placeholderTextColor={Colors.textDim}
+            value={form.liftingCapacity}
+            onChangeText={(v) => setForm((f) => ({ ...f, liftingCapacity: v }))}
+            autoFocus
+          />
+        );
+      case 6:
+        return (
+          <View>
+            <View style={styles.injuryGrid}>
+              {INJURY_OPTIONS.map((inj) => (
+                <Pressable
+                  key={inj}
+                  style={[styles.injuryBtn, form.injuries.includes(inj) && styles.injuryBtnActive]}
+                  onPress={() => toggleInjury(inj)}
+                >
+                  <Text style={[styles.injuryBtnText, form.injuries.includes(inj) && styles.injuryBtnTextActive]}>{inj}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {form.injuries.length > 0 && (
+              <View style={styles.injuryNote}>
+                <Ionicons name="warning-outline" size={13} color="#F59E0B" />
+                <Text style={styles.injuryNoteText}>AI will avoid: {form.injuries.join(", ")}</Text>
+              </View>
+            )}
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.quizOverlay}>
+        <View style={styles.quizCard}>
+          {/* Progress dots */}
+          <View style={styles.quizProgress}>
+            {Array.from({ length: total }).map((_, i) => (
+              <View key={i} style={[styles.quizDot, i <= step && styles.quizDotActive]} />
+            ))}
+          </View>
+
+          {/* Step label */}
+          <Text style={styles.quizStepLabel}>
+            Step {step + 1} of {total}{current.optional ? " (optional)" : ""}
+          </Text>
+
+          {/* Title */}
+          <Text style={styles.quizTitle}>{current.title}</Text>
+          {current.sub && <Text style={styles.quizSub}>{current.sub}</Text>}
+
+          {/* Content */}
+          <View style={styles.quizContent}>{renderStepContent()}</View>
+
+          {/* Navigation */}
+          <View style={styles.quizNav}>
+            <Pressable style={styles.quizBackBtn} onPress={step === 0 ? onClose : goBack}>
+              <Ionicons name="arrow-back" size={16} color={Colors.textDim} />
+              <Text style={styles.quizBackText}>{step === 0 ? "Cancel" : "Back"}</Text>
+            </Pressable>
+            {step < total - 1 ? (
+              <Pressable
+                style={[styles.quizNextBtn, !canAdvance() && { opacity: 0.4 }]}
+                onPress={goNext}
+                disabled={!canAdvance()}
+              >
+                <Text style={styles.quizNextText}>Next</Text>
+                <Ionicons name="arrow-forward" size={16} color={Colors.navy} />
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.quizNextBtn, saving && { opacity: 0.6 }]}
+                onPress={() => onSave(form)}
+                disabled={saving}
+              >
+                {saving ? <ActivityIndicator size={14} color={Colors.navy} /> : null}
+                <Text style={styles.quizNextText}>{saving ? "Saving..." : "Save Profile"}</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function WorkoutsScreen() {
   "use no memo";
   const insets = useSafeAreaInsets();
@@ -178,13 +471,15 @@ export default function WorkoutsScreen() {
   const [tab, setTab] = useState<"plan" | "history">("plan");
   const [selectedDay, setSelectedDay] = useState<number>(() => (new Date().getDay() + 6) % 7);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [quizSaving, setQuizSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [planData, setPlanData] = useState<WorkoutDay[] | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerData, setBannerData] = useState<{ workoutStreak: number } | null>(null);
-  const [form, setForm] = useState({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner" as ExperienceLevel });
+  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+  const [exerciseWeights, setExerciseWeights] = useState<Record<string, string>>({});
 
   const { data: profile, refetch: refetchProfile } = useGetWorkoutProfile();
   const { data: plans, refetch: refetchPlans } = useGetWorkoutPlans();
@@ -210,6 +505,24 @@ export default function WorkoutsScreen() {
       const res = await fetch(`${BASE_URL}/api/workouts/completions`);
       if (res.ok) setCompletions(await res.json());
     } catch { }
+  };
+
+  const openProfileQuiz = () => {
+    if (profile) {
+      const p = profile as any;
+      setQuizForm({
+        age: String(p.age ?? ""),
+        height: p.height ?? "",
+        weight: p.weight ?? "",
+        goal: p.goal ?? "",
+        experienceLevel: p.experienceLevel ?? "beginner",
+        liftingCapacity: p.liftingCapacity ?? "",
+        injuries: Array.isArray(p.injuries) ? p.injuries : [],
+      });
+    } else {
+      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+    }
+    setProfileModalVisible(true);
   };
 
   const handleGenerate = useCallback(async () => {
@@ -280,18 +593,34 @@ export default function WorkoutsScreen() {
     } catch { Alert.alert("Error", "Failed to complete workout"); }
   }, [latestPlan, planData, selectedDay, refetchProfile]);
 
-  const handleSaveProfile = useCallback(async () => {
+  const handleSaveQuiz = useCallback(async (form: QuizForm) => {
     if (!form.age || !form.height || !form.weight || !form.goal) {
-      Alert.alert("Missing fields", "Please fill in all required fields.");
+      Alert.alert("Missing fields", "Please fill in the required fields.");
       return;
     }
+    setQuizSaving(true);
     try {
-      await saveProfile({ data: { age: parseInt(form.age), height: form.height, weight: form.weight, goal: form.goal, experienceLevel: form.experienceLevel } });
+      await saveProfile({
+        data: {
+          age: parseInt(form.age),
+          height: form.height,
+          weight: form.weight,
+          goal: form.goal,
+          experienceLevel: form.experienceLevel,
+          liftingCapacity: form.liftingCapacity || undefined,
+          injuries: form.injuries,
+        } as any,
+      });
       await refetchProfile();
       setProfileModalVisible(false);
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch { Alert.alert("Error", "Failed to save profile"); }
-  }, [form, saveProfile, refetchProfile]);
+    finally { setQuizSaving(false); }
+  }, [saveProfile, refetchProfile]);
+
+  const handleWeightChange = useCallback((name: string, w: string) => {
+    setExerciseWeights((prev) => ({ ...prev, [name]: w }));
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -328,22 +657,13 @@ export default function WorkoutsScreen() {
           <Text style={styles.subtitle}>AI-powered training</Text>
         </View>
         <View style={styles.headerRight}>
-          {/* Streak */}
           <View style={styles.streakBadge}>
             <Ionicons name="flame" size={16} color="#FB923C" />
             <Text style={styles.streakText}>{streak}</Text>
           </View>
-          {/* Profile Button */}
-          <Pressable
-            style={styles.iconBtn}
-            onPress={() => {
-              if (profile) setForm({ age: String((profile as any).age), height: (profile as any).height, weight: (profile as any).weight, goal: (profile as any).goal, experienceLevel: (profile as any).experienceLevel });
-              setProfileModalVisible(true);
-            }}
-          >
+          <Pressable style={styles.iconBtn} onPress={openProfileQuiz}>
             {isIOS ? <SymbolView name="person.fill" size={16} tintColor={Colors.teal} /> : <Ionicons name="person" size={16} color={Colors.teal} />}
           </Pressable>
-          {/* Regenerate Button */}
           {!!profile && !!planData && (
             <Pressable style={styles.iconBtn} onPress={handleGenerate} disabled={generating}>
               {generating ? <ActivityIndicator size={14} color={Colors.teal} /> : (isIOS ? <SymbolView name="arrow.clockwise" size={16} tintColor={Colors.teal} /> : <Ionicons name="refresh" size={16} color={Colors.teal} />)}
@@ -364,7 +684,6 @@ export default function WorkoutsScreen() {
       </View>
 
       {tab === "history" ? (
-        /* ─── HISTORY ─── */
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.teal} />}>
           {completions.length === 0 ? (
             <View style={styles.emptyState}>
@@ -393,17 +712,15 @@ export default function WorkoutsScreen() {
           <View style={{ height: 80 }} />
         </ScrollView>
       ) : !profile ? (
-        /* ─── NO PROFILE ─── */
         <View style={styles.emptyState}>
           <Ionicons name="barbell-outline" size={56} color={Colors.teal} />
           <Text style={styles.emptyTitle}>Set Up Your Profile</Text>
           <Text style={styles.emptyBody}>Tell us about yourself so we can generate a personalized 7-day AI workout plan.</Text>
-          <Pressable style={styles.primaryBtn} onPress={() => setProfileModalVisible(true)}>
+          <Pressable style={styles.primaryBtn} onPress={openProfileQuiz}>
             <Text style={styles.primaryBtnText}>Set Up Profile</Text>
           </Pressable>
         </View>
       ) : !planData ? (
-        /* ─── NO PLAN ─── */
         <View style={styles.emptyState}>
           <Ionicons name="sparkles-outline" size={56} color={Colors.teal} />
           <Text style={styles.emptyTitle}>Ready to Train?</Text>
@@ -413,7 +730,6 @@ export default function WorkoutsScreen() {
           </Pressable>
         </View>
       ) : (
-        /* ─── PLAN ─── */
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.teal} />}>
           {/* 7-Day Row */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayRow} contentContainerStyle={styles.dayRowContent}>
@@ -426,11 +742,7 @@ export default function WorkoutsScreen() {
                 <Pressable
                   key={idx}
                   onPress={() => setSelectedDay(idx)}
-                  style={[
-                    styles.dayPill,
-                    isSelected && !isToday && styles.dayPillSelected,
-                    isToday && styles.dayPillToday,
-                  ]}
+                  style={[styles.dayPill, isSelected && !isToday && styles.dayPillSelected, isToday && styles.dayPillToday]}
                 >
                   <Text style={[styles.dayPillAbbr, (isToday || isSelected) && styles.dayPillAbbrActive]}>{DAY_ABBR[idx]}</Text>
                   {completed ? (
@@ -448,7 +760,6 @@ export default function WorkoutsScreen() {
             })}
           </ScrollView>
 
-          {/* Selected Day Details */}
           {currentDay && (
             <>
               <View style={styles.dayTitle}>
@@ -478,6 +789,8 @@ export default function WorkoutsScreen() {
                       logs={dayLogs}
                       onToggle={handleToggleExercise}
                       onRegenerate={handleRegenerate}
+                      weight={exerciseWeights[ex.name] ?? ""}
+                      onWeightChange={handleWeightChange}
                     />
                   ))}
 
@@ -503,238 +816,130 @@ export default function WorkoutsScreen() {
         </ScrollView>
       )}
 
-      {/* Profile Modal */}
-      <Modal visible={profileModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Your Profile</Text>
-              <Pressable onPress={() => setProfileModalVisible(false)}>
-                {isIOS ? <SymbolView name="xmark.circle.fill" size={24} tintColor={Colors.textDim} /> : <Ionicons name="close-circle" size={24} color={Colors.textDim} />}
-              </Pressable>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.fieldLabel}>Age</Text>
-              <TextInput style={styles.input} placeholder="e.g. 28" placeholderTextColor={Colors.textDim} keyboardType="numeric" value={form.age} onChangeText={(v) => setForm((f) => ({ ...f, age: v }))} />
-              <Text style={styles.fieldLabel}>Height</Text>
-              <TextInput style={styles.input} placeholder="5'10&quot; or 178cm" placeholderTextColor={Colors.textDim} value={form.height} onChangeText={(v) => setForm((f) => ({ ...f, height: v }))} />
-              <Text style={styles.fieldLabel}>Weight</Text>
-              <TextInput style={styles.input} placeholder="170lbs or 77kg" placeholderTextColor={Colors.textDim} value={form.weight} onChangeText={(v) => setForm((f) => ({ ...f, weight: v }))} />
-              <Text style={styles.fieldLabel}>Fitness Goal</Text>
-              <TextInput style={styles.input} placeholder="Build muscle, Lose weight…" placeholderTextColor={Colors.textDim} value={form.goal} onChangeText={(v) => setForm((f) => ({ ...f, goal: v }))} />
-              <Text style={styles.fieldLabel}>Experience Level</Text>
-              <View style={styles.expRow}>
-                {EXP_LEVELS.map((l) => (
-                  <Pressable key={l.value} style={[styles.expChip, form.experienceLevel === l.value && styles.expChipActive]} onPress={() => setForm((f) => ({ ...f, experienceLevel: l.value }))}>
-                    <Text style={[styles.expChipText, form.experienceLevel === l.value && styles.expChipTextActive]}>{l.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Pressable style={[styles.primaryBtn, { marginTop: 24, marginBottom: 8 }]} onPress={handleSaveProfile}>
-                <Text style={styles.primaryBtnText}>Save Profile</Text>
-              </Pressable>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <ProfileQuiz
+        visible={profileModalVisible}
+        initialForm={quizForm}
+        onSave={handleSaveQuiz}
+        onClose={() => setProfileModalVisible(false)}
+        saving={quizSaving}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.navy },
-  banner: {
-    backgroundColor: Colors.navyCard,
-    borderWidth: 1,
-    borderColor: Colors.teal + "66",
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  bannerTitle: { fontSize: 17, fontWeight: "700", color: Colors.textPrimary, marginBottom: 4 },
-  bannerRewards: { fontSize: 14, color: Colors.teal, fontWeight: "600" },
-  bannerStreak: { fontSize: 12, color: Colors.textDim, marginTop: 4 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
+  banner: { position: "absolute", top: 60, left: 16, right: 16, zIndex: 50, backgroundColor: "#0E7490CC", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: Colors.teal + "66" },
+  bannerTitle: { color: Colors.white, fontWeight: "700", fontSize: 16, marginBottom: 4 },
+  bannerRewards: { color: Colors.white, fontSize: 14, marginBottom: 2 },
+  bannerStreak: { color: Colors.teal, fontSize: 13 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 8 },
   headerLeft: {},
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 28, fontWeight: "700", color: Colors.textPrimary },
-  subtitle: { fontSize: 13, color: Colors.textDim, marginTop: 2 },
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.navySurface,
-    borderWidth: 1,
-    borderColor: "#FB923C44",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  streakText: { fontSize: 15, fontWeight: "700", color: "#FB923C" },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.navySurface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabRow: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    backgroundColor: Colors.navyCard,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderDim,
-    padding: 4,
-    marginBottom: 12,
-  },
-  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: "center" },
+  title: { fontSize: 28, fontWeight: "800", color: Colors.white },
+  subtitle: { fontSize: 13, color: Colors.textDim, marginTop: 1 },
+  streakBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#FB923C22", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#FB923C44" },
+  streakText: { color: "#FB923C", fontWeight: "700", fontSize: 15 },
+  iconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.teal + "18", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.teal + "33" },
+  tabRow: { flexDirection: "row", marginHorizontal: 20, marginBottom: 4, backgroundColor: "#FFFFFF0D", borderRadius: 12, padding: 4, borderWidth: 1, borderColor: "#FFFFFF10" },
+  tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center" },
   tabBtnActive: { backgroundColor: Colors.teal },
-  tabBtnText: { fontSize: 13, fontWeight: "600", color: Colors.textDim },
-  tabBtnTextActive: { color: Colors.white },
-  scroll: { paddingHorizontal: 16, paddingBottom: 32 },
-  emptyState: { alignItems: "center", paddingVertical: 60, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 22, fontWeight: "700", color: Colors.textPrimary, textAlign: "center", marginTop: 16, marginBottom: 10 },
-  emptyBody: { fontSize: 14, color: Colors.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 28 },
-  primaryBtn: {
-    backgroundColor: Colors.teal, paddingVertical: 14, paddingHorizontal: 28,
-    borderRadius: 12, alignItems: "center", minWidth: 200,
-  },
-  primaryBtnText: { color: Colors.white, fontWeight: "700", fontSize: 15 },
-  dayRow: { marginBottom: 16 },
-  dayRowContent: { paddingHorizontal: 0, gap: 10, paddingBottom: 4 },
-  dayPill: {
-    width: 64, alignItems: "center", gap: 4, paddingVertical: 10,
-    backgroundColor: Colors.navyCard, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.borderDim,
-  },
-  dayPillSelected: { borderColor: Colors.teal + "88", backgroundColor: Colors.teal + "18" },
-  dayPillToday: { borderColor: Colors.teal, backgroundColor: Colors.teal + "33", borderWidth: 2 },
+  tabBtnText: { color: Colors.textDim, fontWeight: "600", fontSize: 13 },
+  tabBtnTextActive: { color: Colors.navy },
+  scroll: { paddingHorizontal: 20, paddingTop: 8 },
+  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, paddingVertical: 60 },
+  emptyTitle: { color: Colors.white, fontSize: 20, fontWeight: "700", marginTop: 16, textAlign: "center" },
+  emptyBody: { color: Colors.textDim, fontSize: 14, textAlign: "center", marginTop: 8, lineHeight: 20 },
+  primaryBtn: { marginTop: 24, backgroundColor: Colors.teal, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 },
+  primaryBtnText: { color: Colors.navy, fontWeight: "700", fontSize: 15 },
+  dayRow: { marginBottom: 12 },
+  dayRowContent: { gap: 8 },
+  dayPill: { width: 62, paddingVertical: 10, borderRadius: 16, alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#FFFFFF18", backgroundColor: "#FFFFFF08" },
+  dayPillSelected: { borderColor: Colors.teal + "99", backgroundColor: Colors.teal + "1A" },
+  dayPillToday: { borderColor: Colors.teal, backgroundColor: Colors.teal + "33" },
   dayPillAbbr: { fontSize: 10, fontWeight: "700", color: Colors.textDim, textTransform: "uppercase", letterSpacing: 0.5 },
   dayPillAbbrActive: { color: Colors.teal },
-  dayPillFocus: { fontSize: 9, color: Colors.textDim, textAlign: "center" },
-  dayPillFocusActive: { color: Colors.teal },
-  dayTitle: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 },
-  dayTitleText: { fontSize: 22, fontWeight: "700", color: Colors.textPrimary },
-  dayFocusText: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  dayProgress: { fontSize: 12, color: Colors.textDim },
-  restCard: {
-    alignItems: "center", padding: 40,
-    backgroundColor: Colors.navyCard,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.borderDim,
-  },
-  restTitle: { fontSize: 18, fontWeight: "700", color: Colors.textPrimary, marginTop: 12 },
-  restBody: { fontSize: 13, color: Colors.textDim, textAlign: "center", marginTop: 6 },
-  exCard: {
-    backgroundColor: Colors.navyCard,
-    borderRadius: 14, borderWidth: 1,
-    borderColor: Colors.borderDim, marginBottom: 10,
-    overflow: "hidden",
-  },
-  exCardDone: { borderColor: Colors.success + "44" },
-  exCardTop: { flexDirection: "row", alignItems: "flex-start", padding: 14, gap: 10 },
-  exCheckbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: Colors.border,
-    alignItems: "center", justifyContent: "center", marginTop: 1,
-  },
+  dayPillFocus: { fontSize: 9, color: Colors.textDim + "88", textAlign: "center" },
+  dayPillFocusActive: { color: Colors.teal + "BB" },
+  dayTitle: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
+  dayTitleText: { fontSize: 22, fontWeight: "700", color: Colors.white },
+  dayFocusText: { fontSize: 13, color: Colors.textDim, marginTop: 2 },
+  dayProgress: { fontSize: 13, color: Colors.textDim },
+  restCard: { backgroundColor: "#FFFFFF08", borderRadius: 16, padding: 32, alignItems: "center", borderWidth: 1, borderColor: "#FFFFFF10" },
+  restTitle: { color: Colors.white, fontWeight: "700", fontSize: 16, marginTop: 10 },
+  restBody: { color: Colors.textDim, fontSize: 13, marginTop: 4, textAlign: "center" },
+  exCard: { backgroundColor: "#FFFFFF0A", borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: "#FFFFFF15" },
+  exCardDone: { backgroundColor: "#10B98108", borderColor: "#10B98130" },
+  exCardTop: { flexDirection: "row", alignItems: "flex-start", padding: 14, gap: 12 },
+  exCheckbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: "#FFFFFF33", alignItems: "center", justifyContent: "center", marginTop: 1 },
   exInfo: { flex: 1 },
-  exName: { fontSize: 14, fontWeight: "700", color: Colors.textPrimary },
+  exName: { color: Colors.white, fontWeight: "700", fontSize: 15 },
   exNameDone: { color: Colors.textDim, textDecorationLine: "line-through" },
-  exMeta: { flexDirection: "row", gap: 4, marginTop: 3, alignItems: "center" },
-  exReps: { fontSize: 12, color: Colors.tealLight, fontWeight: "600" },
-  exRest: { fontSize: 12, color: Colors.textDim },
-  exActions: { flexDirection: "row", alignItems: "center", gap: 4 },
-  muscleTag: {
-    borderWidth: 1, borderRadius: 6,
-    paddingHorizontal: 6, paddingVertical: 2,
-  },
-  muscleTagText: { fontSize: 10, fontWeight: "700" },
-  regenIconBtn: {
-    width: 28, height: 28, borderRadius: 7,
-    backgroundColor: Colors.navySurface,
-    alignItems: "center", justifyContent: "center",
-  },
-  expandBtn: {
-    width: 28, height: 28, borderRadius: 7,
-    backgroundColor: Colors.navySurface,
-    alignItems: "center", justifyContent: "center",
-  },
-  formGuide: {
-    padding: 14, borderTopWidth: 1, borderTopColor: Colors.borderDim,
-    backgroundColor: Colors.navy + "88",
-  },
-  formGuideTitle: {
-    fontSize: 11, fontWeight: "700", color: Colors.teal,
-    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10,
-  },
-  formStep: { flexDirection: "row", gap: 10, marginBottom: 8 },
-  formStepNum: {
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: Colors.teal + "33",
-    alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1,
-  },
-  formStepNumText: { fontSize: 10, fontWeight: "700", color: Colors.teal },
-  formStepText: { fontSize: 12, color: Colors.textSecondary, flex: 1, lineHeight: 18 },
-  formNotes: { fontSize: 11, color: Colors.textDim, fontStyle: "italic", marginTop: 6 },
-  completeBtn: {
-    backgroundColor: Colors.teal, borderRadius: 14,
-    padding: 16, alignItems: "center", marginTop: 8,
-    shadowColor: Colors.teal, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
-  },
-  completeBtnDone: { backgroundColor: Colors.success + "22", shadowOpacity: 0 },
-  completeBtnText: { fontSize: 14, fontWeight: "700", color: Colors.white, textAlign: "center" },
-  historyCard: {
-    flexDirection: "row", alignItems: "center", gap: 14,
-    backgroundColor: Colors.navyCard, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.borderDim,
-    padding: 14, marginBottom: 10,
-  },
-  historyIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: Colors.success + "18",
-    borderWidth: 1, borderColor: Colors.success + "44",
-    alignItems: "center", justifyContent: "center",
-  },
+  exMeta: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  exReps: { color: "#93C5FD", fontWeight: "600", fontSize: 12 },
+  exRest: { color: Colors.textDim, fontSize: 12 },
+  restTimerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  restTimerText: { color: Colors.teal, fontWeight: "700", fontSize: 12 },
+  restTimerBar: { flex: 1, height: 3, backgroundColor: "#FFFFFF15", borderRadius: 2, overflow: "hidden" },
+  restTimerFill: { height: "100%", backgroundColor: Colors.teal, borderRadius: 2 },
+  skipText: { color: Colors.textDim, fontSize: 11 },
+  weightRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  weightLabel: { color: Colors.textDim, fontSize: 11 },
+  weightInput: { color: Colors.white, fontSize: 12, borderWidth: 1, borderColor: "#FFFFFF20", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, minWidth: 80, backgroundColor: "transparent" },
+  exActions: { alignItems: "flex-end", gap: 6 },
+  muscleTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
+  muscleTagText: { fontSize: 9, fontWeight: "700" },
+  regenIconBtn: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+  expandBtn: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+  formGuide: { borderTopWidth: 1, borderTopColor: "#FFFFFF10", padding: 14 },
+  formGuideTitle: { color: Colors.teal, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 },
+  formStep: { flexDirection: "row", gap: 8, marginBottom: 6 },
+  formStepNum: { width: 16, height: 16, borderRadius: 8, backgroundColor: Colors.teal + "33", alignItems: "center", justifyContent: "center", marginTop: 1 },
+  formStepNumText: { color: Colors.teal, fontSize: 9, fontWeight: "700" },
+  formStepText: { flex: 1, color: Colors.textDim, fontSize: 12, lineHeight: 17 },
+  formNotes: { color: Colors.textDim + "88", fontSize: 11, fontStyle: "italic", marginTop: 8 },
+  completeBtn: { marginTop: 8, backgroundColor: Colors.teal, borderRadius: 16, padding: 16, alignItems: "center" },
+  completeBtnDone: { backgroundColor: Colors.success + "22", borderWidth: 1, borderColor: Colors.success + "44" },
+  completeBtnText: { color: Colors.navy, fontWeight: "700", fontSize: 14 },
+  historyCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF08", borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#FFFFFF10", gap: 12 },
+  historyIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.success + "18", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.success + "33" },
   historyInfo: { flex: 1 },
-  historyDay: { fontSize: 14, fontWeight: "700", color: Colors.textPrimary },
-  historyFocus: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  historyDate: { fontSize: 11, color: Colors.textDim, marginTop: 3 },
+  historyDay: { color: Colors.white, fontWeight: "700", fontSize: 14 },
+  historyFocus: { color: Colors.textDim, fontSize: 12, marginTop: 2 },
+  historyDate: { color: Colors.textDim + "77", fontSize: 11, marginTop: 2 },
   historyRight: { alignItems: "flex-end" },
-  historyExCount: { fontSize: 20, fontWeight: "700", color: Colors.teal },
-  historyExLabel: { fontSize: 10, color: Colors.textDim },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-  modalCard: {
-    backgroundColor: Colors.navyMid, borderTopLeftRadius: 24,
-    borderTopRightRadius: 24, padding: 24, maxHeight: "85%",
-  },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: "700", color: Colors.textPrimary },
-  fieldLabel: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, fontWeight: "600" },
-  input: {
-    backgroundColor: Colors.navySurface, borderWidth: 1,
-    borderColor: Colors.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
-    color: Colors.textPrimary, fontSize: 15, marginBottom: 16,
-  },
-  expRow: { flexDirection: "row", gap: 8 },
-  expChip: {
-    flex: 1, paddingVertical: 10, borderRadius: 10,
-    borderWidth: 1, borderColor: Colors.borderDim,
-    alignItems: "center", backgroundColor: Colors.navySurface,
-  },
-  expChipActive: { borderColor: Colors.teal, backgroundColor: Colors.teal + "22" },
-  expChipText: { fontSize: 13, color: Colors.textDim, fontWeight: "600" },
-  expChipTextActive: { color: Colors.teal },
+  historyExCount: { color: Colors.white, fontWeight: "700", fontSize: 18 },
+  historyExLabel: { color: Colors.textDim, fontSize: 11 },
+  // Quiz styles
+  quizOverlay: { flex: 1, backgroundColor: "#00000099", justifyContent: "flex-end" },
+  quizCard: { backgroundColor: Colors.navy, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28, paddingBottom: 40, borderWidth: 1, borderColor: "#FFFFFF15" },
+  quizProgress: { flexDirection: "row", gap: 5, marginBottom: 20 },
+  quizDot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: "#FFFFFF20" },
+  quizDotActive: { backgroundColor: Colors.teal },
+  quizStepLabel: { color: Colors.textDim, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 },
+  quizTitle: { color: Colors.white, fontSize: 22, fontWeight: "800", marginBottom: 6 },
+  quizSub: { color: Colors.textDim, fontSize: 13, marginBottom: 16 },
+  quizContent: { minHeight: 140, justifyContent: "center" },
+  quizInput: { backgroundColor: "#FFFFFF0A", borderWidth: 1, borderColor: Colors.teal + "55", borderRadius: 12, padding: 14, color: Colors.white, fontSize: 16 },
+  goalGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  goalBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: "#FFFFFF20", backgroundColor: "#FFFFFF08" },
+  goalBtnActive: { borderColor: Colors.teal, backgroundColor: Colors.teal + "25" },
+  goalBtnText: { color: Colors.textDim, fontWeight: "600", fontSize: 13 },
+  goalBtnTextActive: { color: Colors.white },
+  expBtn: { padding: 14, borderRadius: 14, borderWidth: 1, borderColor: "#FFFFFF18", backgroundColor: "#FFFFFF08" },
+  expBtnActive: { borderColor: Colors.teal, backgroundColor: Colors.teal + "20" },
+  expBtnLabel: { color: Colors.textDim, fontWeight: "700", fontSize: 15 },
+  expBtnDesc: { color: Colors.textDim + "88", fontSize: 12, marginTop: 2 },
+  injuryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  injuryBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: "#FFFFFF20", backgroundColor: "#FFFFFF08" },
+  injuryBtnActive: { borderColor: "#EF444499", backgroundColor: "#EF444418" },
+  injuryBtnText: { color: Colors.textDim, fontWeight: "600", fontSize: 13 },
+  injuryBtnTextActive: { color: "#F87171" },
+  injuryNote: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#F59E0B10", borderWidth: 1, borderColor: "#F59E0B33", borderRadius: 10, padding: 10, marginTop: 10 },
+  injuryNoteText: { color: "#F59E0B", fontSize: 12, flex: 1 },
+  quizNav: { flexDirection: "row", gap: 10, marginTop: 24 },
+  quizBackBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: "#FFFFFF20" },
+  quizBackText: { color: Colors.textDim, fontWeight: "600", fontSize: 14 },
+  quizNextBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.teal, paddingVertical: 14, borderRadius: 12 },
+  quizNextText: { color: Colors.navy, fontWeight: "700", fontSize: 15 },
 });

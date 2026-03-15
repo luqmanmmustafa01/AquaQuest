@@ -7,6 +7,8 @@ export const userProfiles = pgTable("user_profiles", {
   weight: text("weight").notNull(),
   goal: text("goal").notNull(),
   experienceLevel: text("experience_level").notNull(),
+  liftingCapacity: text("lifting_capacity"),
+  injuries: jsonb("injuries").default([]),
   workoutStreak: integer("workout_streak").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

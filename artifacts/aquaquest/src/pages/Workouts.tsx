@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetWorkoutProfile,
@@ -13,9 +13,8 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { Flame, Dumbbell, ChevronDown, ChevronUp, Check, RefreshCw, Sparkles, Moon, Trophy, Clock, Zap, History } from "lucide-react";
+import { Flame, Dumbbell, ChevronDown, ChevronUp, Check, RefreshCw, Sparkles, Moon, Trophy, Clock, Zap, History, Timer, ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +31,16 @@ type Exercise = {
 
 type WorkoutDay = { day: string; focus: string; exercises: Exercise[] };
 
+type QuizForm = {
+  age: string;
+  height: string;
+  weight: string;
+  goal: string;
+  experienceLevel: string;
+  liftingCapacity: string;
+  injuries: string[];
+};
+
 const MUSCLE_COLORS: Record<string, string> = {
   Chest: "text-blue-400 bg-blue-400/10 border-blue-400/30",
   Back: "text-purple-400 bg-purple-400/10 border-purple-400/30",
@@ -44,25 +53,72 @@ const MUSCLE_COLORS: Record<string, string> = {
   Cardio: "text-red-400 bg-red-400/10 border-red-400/30",
 };
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+const GOAL_OPTIONS = ["Build Muscle", "Lose Weight", "Improve Endurance", "Get Stronger", "Improve Flexibility", "Stay Active"];
+const EXP_OPTIONS = [
+  { value: "beginner", label: "Beginner", desc: "< 1 year of training" },
+  { value: "intermediate", label: "Intermediate", desc: "1–3 years of training" },
+  { value: "advanced", label: "Advanced", desc: "3+ years of training" },
+];
+const INJURY_OPTIONS = ["Knee", "Shoulder", "Lower Back", "Wrist", "Hip", "Ankle", "Neck", "Elbow"];
 
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getMuscleClass(m?: string) {
   return MUSCLE_COLORS[m ?? ""] ?? "text-primary bg-primary/10 border-primary/30";
 }
 
+function parseRestSeconds(rest: string): number {
+  const m = rest.match(/(\d+)/);
+  if (!m) return 60;
+  const n = parseInt(m[1]);
+  return rest.toLowerCase().includes("min") ? n * 60 : n;
+}
+
 function ExerciseCard({
-  exercise, dayIndex, planId, logs, onToggle, onRegenerate,
+  exercise, dayIndex, planId, logs, onToggle, onRegenerate, weight, onWeightChange,
 }: {
   exercise: Exercise; dayIndex: number; planId: number;
   logs: { exerciseName: string; completed: boolean }[];
   onToggle: (name: string, completed: boolean) => void;
   onRegenerate: (name: string, muscleGroup?: string) => void;
+  weight: string;
+  onWeightChange: (name: string, weight: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const done = logs.find((l) => l.exerciseName === exercise.name)?.completed ?? false;
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const startRestTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const secs = parseRestSeconds(exercise.rest);
+    setRestTimer(secs);
+    timerRef.current = setInterval(() => {
+      setRestTimer((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const skipTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setRestTimer(null);
+  };
+
+  const handleToggle = (name: string, completed: boolean) => {
+    onToggle(name, completed);
+    if (completed) startRestTimer();
+    else skipTimer();
+  };
 
   const handleRegen = async () => {
     setRegenerating(true);
@@ -76,9 +132,8 @@ function ExerciseCard({
       done ? "border-emerald-500/30 bg-emerald-500/5" : "border-border/50 bg-card/60 hover:border-primary/30"
     )}>
       <div className="flex items-start gap-3 p-4">
-        {/* Checkbox */}
         <button
-          onClick={() => onToggle(exercise.name, !done)}
+          onClick={() => handleToggle(exercise.name, !done)}
           className={cn(
             "w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all",
             done ? "bg-emerald-500 border-emerald-500" : "border-border hover:border-primary"
@@ -112,6 +167,39 @@ function ExerciseCard({
           <div className="flex items-center gap-4 mt-1.5 text-xs">
             <span className="text-blue-300 font-semibold">{exercise.sets} sets × {exercise.reps}</span>
             <span className="text-muted-foreground">{exercise.rest} rest</span>
+          </div>
+
+          {/* Rest timer */}
+          <AnimatePresence>
+            {restTimer !== null && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="flex items-center gap-2 mt-2"
+              >
+                <Timer className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+                <span className="text-teal-400 font-bold text-sm tabular-nums">Rest: {restTimer}s</span>
+                <div className="flex-1 h-1 bg-border/40 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-teal-400 rounded-full transition-all duration-1000"
+                    style={{ width: `${(restTimer / parseRestSeconds(exercise.rest)) * 100}%` }}
+                  />
+                </div>
+                <button onClick={skipTimer} className="text-[11px] text-muted-foreground hover:text-white transition-colors">skip</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Weight input */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-muted-foreground flex-shrink-0">Weight used:</span>
+            <Input
+              className="h-6 w-28 text-xs px-2 bg-transparent border-border/30 text-white placeholder:text-muted-foreground/50"
+              placeholder="e.g. 50lbs"
+              value={weight}
+              onChange={(e) => onWeightChange(exercise.name, e.target.value)}
+            />
           </div>
 
           {exercise.notes && !expanded && (
@@ -161,6 +249,252 @@ function ExerciseCard({
   );
 }
 
+const QUIZ_STEPS = [
+  { key: "age", title: "How old are you?", sub: null, optional: false },
+  { key: "height", title: "What's your height?", sub: null, optional: false },
+  { key: "weight", title: "What's your body weight?", sub: null, optional: false },
+  { key: "goal", title: "What's your fitness goal?", sub: null, optional: false },
+  { key: "experienceLevel", title: "What's your experience level?", sub: null, optional: false },
+  { key: "liftingCapacity", title: "What weights do you have access to?", sub: "Optional – helps the AI tailor exercises to your equipment", optional: true },
+  { key: "injuries", title: "Any injuries or restrictions?", sub: "Optional – these areas will be avoided in your plan", optional: true },
+];
+
+function ProfileQuiz({
+  initialForm,
+  onSave,
+  onClose,
+  saving,
+}: {
+  initialForm: QuizForm;
+  onSave: (form: QuizForm) => Promise<void>;
+  onClose: () => void;
+  saving: boolean;
+}) {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<QuizForm>(initialForm);
+  const total = QUIZ_STEPS.length;
+  const current = QUIZ_STEPS[step];
+
+  const canAdvance = () => {
+    if (current.optional) return true;
+    switch (step) {
+      case 0: return form.age !== "" && !isNaN(Number(form.age)) && Number(form.age) > 0;
+      case 1: return form.height.trim() !== "";
+      case 2: return form.weight.trim() !== "";
+      case 3: return form.goal.trim() !== "";
+      case 4: return true;
+      default: return true;
+    }
+  };
+
+  const goNext = () => { if (step < total - 1) setStep((s) => s + 1); };
+  const goBack = () => { if (step > 0) setStep((s) => s - 1); };
+
+  const renderContent = () => {
+    switch (step) {
+      case 0:
+        return (
+          <Input
+            type="number" autoFocus min={1} max={120}
+            placeholder="e.g. 28"
+            value={form.age}
+            onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && canAdvance() && goNext()}
+            className="text-center text-2xl h-14 bg-[#0A1628] border-primary/30 text-white"
+          />
+        );
+      case 1:
+        return (
+          <Input
+            autoFocus placeholder="5'10&quot; or 178cm"
+            value={form.height}
+            onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && canAdvance() && goNext()}
+            className="text-center text-xl h-14 bg-[#0A1628] border-primary/30 text-white"
+          />
+        );
+      case 2:
+        return (
+          <Input
+            autoFocus placeholder="170lbs or 77kg"
+            value={form.weight}
+            onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && canAdvance() && goNext()}
+            className="text-center text-xl h-14 bg-[#0A1628] border-primary/30 text-white"
+          />
+        );
+      case 3:
+        return (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              {GOAL_OPTIONS.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => { setForm((f) => ({ ...f, goal: g })); setTimeout(goNext, 180); }}
+                  className={cn(
+                    "p-3 rounded-xl border text-sm font-semibold transition-all text-left",
+                    form.goal === g ? "border-primary bg-primary/20 text-white" : "border-border/50 bg-card/50 text-muted-foreground hover:border-primary/40 hover:text-white"
+                  )}
+                >{g}</button>
+              ))}
+            </div>
+            <Input
+              placeholder="Or type your own goal..."
+              value={GOAL_OPTIONS.includes(form.goal) ? "" : form.goal}
+              onChange={(e) => setForm((f) => ({ ...f, goal: e.target.value }))}
+              className="bg-[#0A1628] border-border/30 text-sm text-white"
+            />
+          </div>
+        );
+      case 4:
+        return (
+          <div className="flex flex-col gap-3">
+            {EXP_OPTIONS.map((e) => (
+              <button
+                key={e.value}
+                onClick={() => { setForm((f) => ({ ...f, experienceLevel: e.value })); setTimeout(goNext, 180); }}
+                className={cn(
+                  "p-4 rounded-xl border text-left transition-all",
+                  form.experienceLevel === e.value
+                    ? "border-primary bg-primary/20 shadow-[0_0_12px_rgba(14,116,144,0.3)]"
+                    : "border-border/50 bg-card/50 hover:border-primary/40"
+                )}
+              >
+                <div className="font-bold text-white">{e.label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{e.desc}</div>
+              </button>
+            ))}
+          </div>
+        );
+      case 5:
+        return (
+          <Input
+            autoFocus
+            placeholder="e.g. Dumbbells up to 50lbs, barbell, bodyweight only"
+            value={form.liftingCapacity}
+            onChange={(e) => setForm((f) => ({ ...f, liftingCapacity: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && goNext()}
+            className="h-14 bg-[#0A1628] border-primary/30 text-white"
+          />
+        );
+      case 6:
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {INJURY_OPTIONS.map((inj) => (
+                <button
+                  key={inj}
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      injuries: f.injuries.includes(inj)
+                        ? f.injuries.filter((i) => i !== inj)
+                        : [...f.injuries, inj],
+                    }))
+                  }
+                  className={cn(
+                    "px-4 py-2 rounded-xl border text-sm font-semibold transition-all",
+                    form.injuries.includes(inj)
+                      ? "border-red-500/60 bg-red-500/15 text-red-400"
+                      : "border-border/50 bg-card/50 text-muted-foreground hover:border-primary/30 hover:text-white"
+                  )}
+                >
+                  {inj}
+                </button>
+              ))}
+            </div>
+            {form.injuries.length > 0 && (
+              <div className="flex items-center gap-2 text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                The AI will avoid exercises that stress: {form.injuries.join(", ")}
+              </div>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="glass-panel rounded-3xl p-7 w-full max-w-md border border-border/50"
+      >
+        {/* Progress bar */}
+        <div className="flex gap-1 mb-6">
+          {Array.from({ length: total }).map((_, i) => (
+            <div
+              key={i}
+              className={cn("h-1 flex-1 rounded-full transition-all duration-300", i <= step ? "bg-primary" : "bg-border/40")}
+            />
+          ))}
+        </div>
+
+        {/* Step label */}
+        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          Step {step + 1} of {total}
+          {current.optional && <span className="text-primary/60">(optional)</span>}
+        </div>
+
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-white mb-1">{current.title}</h2>
+        {current.sub && <p className="text-sm text-muted-foreground mb-5">{current.sub}</p>}
+        {!current.sub && <div className="mb-5" />}
+
+        {/* Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.18 }}
+            className="min-h-[130px]"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation */}
+        <div className="flex gap-3 mt-7">
+          <button
+            onClick={step === 0 ? onClose : goBack}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border/50 text-muted-foreground hover:text-white hover:border-border transition-all text-sm font-semibold"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> {step === 0 ? "Cancel" : "Back"}
+          </button>
+          {step < total - 1 ? (
+            <button
+              onClick={goNext}
+              disabled={!canAdvance()}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                canAdvance()
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-card/50 text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              Next <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={() => onSave(form)}
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary to-teal-500 text-white font-bold transition-all hover:opacity-90"
+            >
+              {saving ? <Spinner className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+              {saving ? "Saving..." : "Save Profile"}
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function Workouts() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"plan" | "history">("plan");
@@ -170,8 +504,10 @@ export default function Workouts() {
   });
   const [profileOpen, setProfileOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [quizSaving, setQuizSaving] = useState(false);
   const [completionBanner, setCompletionBanner] = useState<null | { coins: number; gems: number; spinTickets: number; workoutStreak: number }>(null);
-  const [form, setForm] = useState({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner" });
+  const [quizForm, setQuizForm] = useState<QuizForm>({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+  const [exerciseWeights, setExerciseWeights] = useState<Record<string, string>>({});
 
   const { data: profile, isLoading: profileLoading } = useGetWorkoutProfile({ query: { retry: false } });
   const { data: plans } = useGetWorkoutPlans();
@@ -193,6 +529,24 @@ export default function Workouts() {
       fetchCompletions();
     }
   }, [latestPlan?.id]);
+
+  const openProfileQuiz = () => {
+    if (profile) {
+      const p = profile as any;
+      setQuizForm({
+        age: String(p.age ?? ""),
+        height: p.height ?? "",
+        weight: p.weight ?? "",
+        goal: p.goal ?? "",
+        experienceLevel: p.experienceLevel ?? "beginner",
+        liftingCapacity: p.liftingCapacity ?? "",
+        injuries: Array.isArray(p.injuries) ? p.injuries : [],
+      });
+    } else {
+      setQuizForm({ age: "", height: "", weight: "", goal: "", experienceLevel: "beginner", liftingCapacity: "", injuries: [] });
+    }
+    setProfileOpen(true);
+  };
 
   const fetchCompletions = async () => {
     try {
@@ -261,13 +615,29 @@ export default function Workouts() {
     } catch { }
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveQuiz = async (form: QuizForm) => {
+    setQuizSaving(true);
     try {
-      await saveProfile({ data: { age: parseInt(form.age), height: form.height, weight: form.weight, goal: form.goal, experienceLevel: form.experienceLevel as any } });
+      await saveProfile({
+        data: {
+          age: parseInt(form.age),
+          height: form.height,
+          weight: form.weight,
+          goal: form.goal,
+          experienceLevel: form.experienceLevel as any,
+          liftingCapacity: form.liftingCapacity || undefined,
+          injuries: form.injuries,
+        } as any,
+      });
       await queryClient.invalidateQueries({ queryKey: getGetWorkoutProfileQueryKey() });
       setProfileOpen(false);
     } catch { alert("Failed to save profile"); }
+    finally { setQuizSaving(false); }
   };
+
+  const handleWeightChange = useCallback((name: string, w: string) => {
+    setExerciseWeights((prev) => ({ ...prev, [name]: w }));
+  }, []);
 
   if (profileLoading) return <div className="flex items-center justify-center h-64"><Spinner className="w-8 h-8 text-primary" /></div>;
 
@@ -304,9 +674,7 @@ export default function Workouts() {
               </div>
               <div className="text-xs text-muted-foreground mt-2">Streak: {completionBanner.workoutStreak} days 🔥</div>
             </div>
-            <button onClick={() => setCompletionBanner(null)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
-              ✕
-            </button>
+            <button onClick={() => setCompletionBanner(null)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">✕</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -320,7 +688,7 @@ export default function Workouts() {
           <p className="text-muted-foreground">AI-powered personalized training plans.</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={() => { if (profile) setForm({ age: String((profile as any).age), height: (profile as any).height, weight: (profile as any).weight, goal: (profile as any).goal, experienceLevel: (profile as any).experienceLevel }); setProfileOpen(true); }} className="gap-2">
+          <Button variant="ghost" onClick={openProfileQuiz} className="gap-2">
             Profile
           </Button>
           {profile && (
@@ -361,7 +729,7 @@ export default function Workouts() {
           <Dumbbell className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-white mb-2">Set Up Your Profile</h3>
           <p className="text-muted-foreground mb-6">Tell us about yourself so we can generate a personalized 7-day AI workout plan.</p>
-          <Button onClick={() => setProfileOpen(true)}>Set Up Profile</Button>
+          <Button onClick={openProfileQuiz}>Set Up Profile</Button>
         </div>
       ) : !planData ? (
         <div className="py-20 text-center glass-panel rounded-3xl border-dashed">
@@ -442,6 +810,8 @@ export default function Workouts() {
                       logs={dayLogs}
                       onToggle={handleToggle}
                       onRegenerate={handleRegenerate}
+                      weight={exerciseWeights[ex.name] ?? ""}
+                      onWeightChange={handleWeightChange}
                     />
                   ))}
 
@@ -476,38 +846,14 @@ export default function Workouts() {
         </>
       )}
 
-      {/* Profile Modal */}
+      {/* Quiz Modal */}
       {profileOpen && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="glass-panel rounded-3xl p-6 w-full max-w-md border border-border/50 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Your Profile</h2>
-              <button onClick={() => setProfileOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
-            </div>
-            <div className="space-y-4">
-              <div><Label>Age</Label><Input value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))} type="number" placeholder="28" /></div>
-              <div><Label>Height</Label><Input value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} placeholder="5'10&quot; or 178cm" /></div>
-              <div><Label>Weight</Label><Input value={form.weight} onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))} placeholder="170lbs or 77kg" /></div>
-              <div><Label>Fitness Goal</Label><Input value={form.goal} onChange={(e) => setForm((f) => ({ ...f, goal: e.target.value }))} placeholder="Build muscle, Lose weight..." /></div>
-              <div>
-                <Label>Experience Level</Label>
-                <select
-                  value={form.experienceLevel}
-                  onChange={(e) => setForm((f) => ({ ...f, experienceLevel: e.target.value }))}
-                  className="w-full mt-1.5 px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-              <div className="pt-2 flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setProfileOpen(false)}>Cancel</Button>
-                <Button onClick={handleSaveProfile}>Save Profile</Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProfileQuiz
+          initialForm={quizForm}
+          onSave={handleSaveQuiz}
+          onClose={() => setProfileOpen(false)}
+          saving={quizSaving}
+        />
       )}
     </div>
   );
