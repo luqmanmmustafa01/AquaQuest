@@ -164,9 +164,11 @@ export default function DeenPage() {
     setPrayers(pc);
     setSunnah(sc);
     setQuranPages(progress.quranPages ?? 0);
-    const counts: Record<string, number> = { SubhanAllah: 0, Alhamdulillah: 0, "Allahu Akbar": 0 };
-    dc.forEach((k: string) => { if (counts[k] !== undefined) counts[k] = 33; });
-    setDhikr(counts);
+    const serverCounts: Record<string, number> = { SubhanAllah: 0, Alhamdulillah: 0, "Allahu Akbar": 0 };
+    dc.forEach((k: string) => { if (serverCounts[k] !== undefined) serverCounts[k] = 33; });
+    setDhikr((prev) =>
+      Object.fromEntries(Object.keys(serverCounts).map((k) => [k, serverCounts[k] === 33 ? 33 : (prev[k] ?? 0)]))
+    );
   }, [progress]);
 
   /* Compute Deen Score */
