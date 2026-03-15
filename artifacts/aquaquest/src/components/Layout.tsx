@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Compass, Fish, LayoutDashboard, Swords, Trophy, Menu, X } from "lucide-react";
+import { Compass, Fish, LayoutDashboard, Swords, Trophy, Menu, X, Moon } from "lucide-react";
+import { CurrencyBar } from "./CurrencyBar";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +10,7 @@ const navItems = [
   { href: "/quests", label: "Quests", icon: Swords },
   { href: "/creatures", label: "Creatures", icon: Fish },
   { href: "/achievements", label: "Achievements", icon: Trophy },
+  { href: "/deen", label: "Deen", icon: Moon },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -113,6 +115,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 relative z-10 pt-16 md:pt-0 h-screen overflow-y-auto overflow-x-hidden">
+        <CurrencyBar />
         <motion.div
           key={location}
           initial={{ opacity: 0, y: 20 }}

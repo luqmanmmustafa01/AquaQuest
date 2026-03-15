@@ -1,3 +1,4 @@
+import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -271,6 +272,7 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <CurrencyHeader />
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Workouts</Text>

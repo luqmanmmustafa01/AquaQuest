@@ -1,3 +1,4 @@
+import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React, { useState } from "react";
 import {
   View,
@@ -349,8 +350,9 @@ export default function QuestsScreen() {
   const fabStyle = useAnimatedStyle(() => ({ transform: [{ scale: filterBtnScale.value }] }));
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerBar, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <CurrencyHeader />
+      <View style={[styles.headerBar, { paddingTop: 12 }]}>
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.screenTitle}>Quests</Text>

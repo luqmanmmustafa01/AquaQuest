@@ -28,6 +28,17 @@ pnpm workspace monorepo using TypeScript. An ocean exploration quest-tracking ap
 - **Creatures**: Sea creature collection gallery with rarity badges (common → legendary)
 - **Achievements**: Achievement panel with category badges and unlock status
 - **Dashboard**: Overview of active quests, stats, and progress
+- **Workouts**: AI-powered workout plan generation via Anthropic
+- **Currency Header**: Persistent bar showing Coins 🪙, Gems 💎, Spin Tickets 🎟️ on every screen (web + mobile)
+- **Deen Screen** (web + mobile):
+  - Prayer times (Aladhan API, location-based) with per-prayer checkboxes
+  - Hijri calendar with important Islamic dates highlighted
+  - Quran tracker with daily goal and streak
+  - Dhikr counter (SubhanAllah / Alhamdulillah / Allahu Akbar × 33)
+  - Dua journal (create/expand/delete, stored in PostgreSQL)
+  - Daily Hadith rotating from 30 authentic hadiths
+  - 3 daily Sunnah act checkboxes
+  - Deen Score circular progress ring (prayers 40% + quran 25% + dhikr 20% + sunnah 15%)
 
 ## Structure
 
@@ -44,7 +55,8 @@ artifacts-monorepo/
 │       └── src/schema/
 │           ├── quests.ts       # Quests table (difficulty, status, xp, depth)
 │           ├── creatures.ts    # Sea creatures table (rarity, depth, emoji)
-│           └── achievements.ts # Achievements table (category, unlocked_at)
+│           ├── achievements.ts # Achievements table (category, unlocked_at)
+│           └── deen.ts         # user_currency, duas, deen_progress tables
 └── scripts/
 ```
 
@@ -58,6 +70,10 @@ artifacts-monorepo/
 - `DELETE /api/quests/:id` — Delete quest
 - `GET /api/creatures` — List discovered creatures
 - `GET /api/achievements` — List achievements
+- `GET/PATCH /api/currency` — User currency (coins, gems, spin tickets)
+- `GET/PATCH /api/deen/progress?date=YYYY-MM-DD` — Today's Deen progress
+- `GET/POST /api/deen/duas` — Dua journal entries
+- `DELETE /api/deen/duas/:id` — Delete a dua
 
 ## TypeScript & Composite Projects
 

@@ -1,3 +1,4 @@
+import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React from "react";
 import {
   View,
@@ -110,6 +111,7 @@ export default function DashboardScreen() {
   const creatures = Array.isArray(_creatures) ? _creatures : [];
   const achievements = Array.isArray(_achievements) ? _achievements : [];
 
+
   const pulse = useSharedValue(1);
   React.useEffect(() => {
     pulse.value = withRepeat(
@@ -130,10 +132,11 @@ export default function DashboardScreen() {
   const topInset = Platform.OS === "web" ? 67 : insets.top;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <CurrencyHeader />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: topInset + 12,
+          paddingTop: 12,
           paddingBottom: (Platform.OS === "web" ? 34 : insets.bottom) + 100,
           paddingHorizontal: 20,
           gap: 20,

@@ -32,6 +32,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "trophy", selected: "trophy.fill" }} />
         <Label>Achievements</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="deen">
+        <Icon sf={{ default: "moon.stars", selected: "moon.stars.fill" }} />
+        <Label>Deen</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -121,6 +125,18 @@ function ClassicTabLayout() {
               <SymbolView name="trophy.fill" tintColor={color} size={size} />
             ) : (
               <Ionicons name="trophy" size={size} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="deen"
+        options={{
+          title: "Deen",
+          tabBarIcon: ({ color, size }) =>
+            isIOS ? (
+              <SymbolView name="moon.stars.fill" tintColor={color} size={size} />
+            ) : (
+              <Ionicons name="moon" size={size} color={color} />
             ),
         }}
       />

@@ -1,3 +1,4 @@
+import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React from "react";
 import {
   View,
@@ -115,8 +116,9 @@ export default function AchievementsScreen() {
   const sorted = [...unlocked, ...locked];
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerBar, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <CurrencyHeader />
+      <View style={[styles.headerBar, { paddingTop: 12 }]}>
         <Text style={styles.screenTitle}>Achievements</Text>
         <Text style={styles.screenSub}>
           {unlocked.length} / {achievements.length} unlocked

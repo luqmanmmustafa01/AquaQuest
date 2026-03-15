@@ -1,3 +1,4 @@
+import { CurrencyHeader } from "@/components/CurrencyHeader";
 import React from "react";
 import {
   View,
@@ -111,8 +112,9 @@ export default function CreaturesScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerBar, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <CurrencyHeader />
+      <View style={[styles.headerBar, { paddingTop: 12 }]}>
         <Text style={styles.screenTitle}>Sea Creatures</Text>
         <Text style={styles.screenSub}>{creatures.length} discovered</Text>
       </View>

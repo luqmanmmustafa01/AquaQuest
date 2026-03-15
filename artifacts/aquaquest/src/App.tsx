@@ -5,6 +5,7 @@ import Dashboard from "@/pages/Dashboard";
 import Quests from "@/pages/Quests";
 import Creatures from "@/pages/Creatures";
 import Achievements from "@/pages/Achievements";
+import Deen from "@/pages/Deen";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -24,6 +25,7 @@ function Router() {
         <Route path="/quests" component={Quests} />
         <Route path="/creatures" component={Creatures} />
         <Route path="/achievements" component={Achievements} />
+        <Route path="/deen" component={Deen} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
