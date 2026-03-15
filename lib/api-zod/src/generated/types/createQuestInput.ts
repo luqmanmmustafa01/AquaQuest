@@ -5,12 +5,16 @@
  * AquaQuest API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateQuestInputCategory } from "./createQuestInputCategory";
 import type { CreateQuestInputDifficulty } from "./createQuestInputDifficulty";
+import type { CreateQuestInputGoalType } from "./createQuestInputGoalType";
 
 export interface CreateQuestInput {
   title: string;
-  description: string;
+  description?: string | null;
   difficulty: CreateQuestInputDifficulty;
   xpReward: number;
-  depthLevel: number;
+  category: CreateQuestInputCategory;
+  goalType: CreateQuestInputGoalType;
+  targetDate?: string | null;
 }

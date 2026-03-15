@@ -18,8 +18,6 @@ router.get("/", async (_req, res) => {
     const quests = await db.select().from(questsTable).orderBy(questsTable.createdAt);
     res.json(quests.map(q => ({
       ...q,
-      xpReward: q.xpReward,
-      depthLevel: q.depthLevel,
       createdAt: q.createdAt.toISOString(),
       updatedAt: q.updatedAt.toISOString(),
     })));
@@ -33,10 +31,12 @@ router.post("/", async (req, res) => {
     const body = CreateQuestBody.parse(req.body);
     const parsed = insertQuestSchema.parse({
       title: body.title,
-      description: body.description,
+      description: body.description ?? null,
       difficulty: body.difficulty,
       xpReward: body.xpReward,
-      depthLevel: body.depthLevel,
+      category: body.category,
+      goalType: body.goalType,
+      targetDate: body.targetDate ?? null,
     });
     const [quest] = await db.insert(questsTable).values(parsed).returning();
     res.status(201).json({

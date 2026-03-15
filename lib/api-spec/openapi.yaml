@@ -297,6 +297,7 @@ components:
           type: string
         description:
           type: string
+          nullable: true
         difficulty:
           type: string
           enum: [easy, medium, hard, legendary]
@@ -305,8 +306,19 @@ components:
           enum: [active, completed, failed]
         xpReward:
           type: integer
-        depthLevel:
+        category:
+          type: string
+          enum: [fitness, wellness, productivity]
+        goalType:
+          type: string
+          enum: [daily, weekly, long_term]
+        streak:
           type: integer
+        progress:
+          type: integer
+        targetDate:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -316,11 +328,13 @@ components:
       required:
         - id
         - title
-        - description
         - difficulty
         - status
         - xpReward
-        - depthLevel
+        - category
+        - goalType
+        - streak
+        - progress
         - createdAt
         - updatedAt
     CreateQuestInput:
@@ -330,19 +344,27 @@ components:
           type: string
         description:
           type: string
+          nullable: true
         difficulty:
           type: string
           enum: [easy, medium, hard, legendary]
         xpReward:
           type: integer
-        depthLevel:
-          type: integer
+        category:
+          type: string
+          enum: [fitness, wellness, productivity]
+        goalType:
+          type: string
+          enum: [daily, weekly, long_term]
+        targetDate:
+          type: string
+          nullable: true
       required:
         - title
-        - description
         - difficulty
         - xpReward
-        - depthLevel
+        - category
+        - goalType
     UpdateQuestInput:
       type: object
       properties:
@@ -350,6 +372,7 @@ components:
           type: string
         description:
           type: string
+          nullable: true
         difficulty:
           type: string
           enum: [easy, medium, hard, legendary]
@@ -358,8 +381,19 @@ components:
           enum: [active, completed, failed]
         xpReward:
           type: integer
-        depthLevel:
+        category:
+          type: string
+          enum: [fitness, wellness, productivity]
+        goalType:
+          type: string
+          enum: [daily, weekly, long_term]
+        streak:
           type: integer
+        progress:
+          type: integer
+        targetDate:
+          type: string
+          nullable: true
     Creature:
       type: object
       properties:

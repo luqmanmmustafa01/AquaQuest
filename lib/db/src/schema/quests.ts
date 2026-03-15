@@ -4,15 +4,21 @@ import { z } from "zod/v4";
 
 export const difficultyEnum = pgEnum("difficulty", ["easy", "medium", "hard", "legendary"]);
 export const questStatusEnum = pgEnum("quest_status", ["active", "completed", "failed"]);
+export const goalCategoryEnum = pgEnum("goal_category", ["fitness", "wellness", "productivity"]);
+export const goalTypeEnum = pgEnum("goal_type", ["daily", "weekly", "long_term"]);
 
 export const questsTable = pgTable("quests", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  description: text("description").notNull(),
+  description: text("description"),
   difficulty: difficultyEnum("difficulty").notNull().default("easy"),
   status: questStatusEnum("status").notNull().default("active"),
   xpReward: integer("xp_reward").notNull().default(100),
-  depthLevel: integer("depth_level").notNull().default(0),
+  category: goalCategoryEnum("category").notNull().default("fitness"),
+  goalType: goalTypeEnum("goal_type").notNull().default("daily"),
+  streak: integer("streak").notNull().default(0),
+  progress: integer("progress").notNull().default(0),
+  targetDate: text("target_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

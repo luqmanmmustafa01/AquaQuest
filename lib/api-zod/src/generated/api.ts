@@ -21,11 +21,15 @@ export const HealthCheckResponse = zod.object({
 export const GetQuestsResponseItem = zod.object({
   id: zod.number(),
   title: zod.string(),
-  description: zod.string(),
+  description: zod.string().nullish(),
   difficulty: zod.enum(["easy", "medium", "hard", "legendary"]),
   status: zod.enum(["active", "completed", "failed"]),
   xpReward: zod.number(),
-  depthLevel: zod.number(),
+  category: zod.enum(["fitness", "wellness", "productivity"]),
+  goalType: zod.enum(["daily", "weekly", "long_term"]),
+  streak: zod.number(),
+  progress: zod.number(),
+  targetDate: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -36,10 +40,12 @@ export const GetQuestsResponse = zod.array(GetQuestsResponseItem);
  */
 export const CreateQuestBody = zod.object({
   title: zod.string(),
-  description: zod.string(),
+  description: zod.string().nullish(),
   difficulty: zod.enum(["easy", "medium", "hard", "legendary"]),
   xpReward: zod.number(),
-  depthLevel: zod.number(),
+  category: zod.enum(["fitness", "wellness", "productivity"]),
+  goalType: zod.enum(["daily", "weekly", "long_term"]),
+  targetDate: zod.string().nullish(),
 });
 
 /**
@@ -52,11 +58,15 @@ export const GetQuestParams = zod.object({
 export const GetQuestResponse = zod.object({
   id: zod.number(),
   title: zod.string(),
-  description: zod.string(),
+  description: zod.string().nullish(),
   difficulty: zod.enum(["easy", "medium", "hard", "legendary"]),
   status: zod.enum(["active", "completed", "failed"]),
   xpReward: zod.number(),
-  depthLevel: zod.number(),
+  category: zod.enum(["fitness", "wellness", "productivity"]),
+  goalType: zod.enum(["daily", "weekly", "long_term"]),
+  streak: zod.number(),
+  progress: zod.number(),
+  targetDate: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -70,21 +80,29 @@ export const UpdateQuestParams = zod.object({
 
 export const UpdateQuestBody = zod.object({
   title: zod.string().optional(),
-  description: zod.string().optional(),
+  description: zod.string().nullish(),
   difficulty: zod.enum(["easy", "medium", "hard", "legendary"]).optional(),
   status: zod.enum(["active", "completed", "failed"]).optional(),
   xpReward: zod.number().optional(),
-  depthLevel: zod.number().optional(),
+  category: zod.enum(["fitness", "wellness", "productivity"]).optional(),
+  goalType: zod.enum(["daily", "weekly", "long_term"]).optional(),
+  streak: zod.number().optional(),
+  progress: zod.number().optional(),
+  targetDate: zod.string().nullish(),
 });
 
 export const UpdateQuestResponse = zod.object({
   id: zod.number(),
   title: zod.string(),
-  description: zod.string(),
+  description: zod.string().nullish(),
   difficulty: zod.enum(["easy", "medium", "hard", "legendary"]),
   status: zod.enum(["active", "completed", "failed"]),
   xpReward: zod.number(),
-  depthLevel: zod.number(),
+  category: zod.enum(["fitness", "wellness", "productivity"]),
+  goalType: zod.enum(["daily", "weekly", "long_term"]),
+  streak: zod.number(),
+  progress: zod.number(),
+  targetDate: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });

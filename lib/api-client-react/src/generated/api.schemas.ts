@@ -27,14 +27,34 @@ export const QuestStatus = {
   failed: "failed",
 } as const;
 
+export type QuestCategory = (typeof QuestCategory)[keyof typeof QuestCategory];
+
+export const QuestCategory = {
+  fitness: "fitness",
+  wellness: "wellness",
+  productivity: "productivity",
+} as const;
+
+export type QuestGoalType = (typeof QuestGoalType)[keyof typeof QuestGoalType];
+
+export const QuestGoalType = {
+  daily: "daily",
+  weekly: "weekly",
+  long_term: "long_term",
+} as const;
+
 export interface Quest {
   id: number;
   title: string;
-  description: string;
+  description?: string | null;
   difficulty: QuestDifficulty;
   status: QuestStatus;
   xpReward: number;
-  depthLevel: number;
+  category: QuestCategory;
+  goalType: QuestGoalType;
+  streak: number;
+  progress: number;
+  targetDate?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,12 +69,32 @@ export const CreateQuestInputDifficulty = {
   legendary: "legendary",
 } as const;
 
+export type CreateQuestInputCategory =
+  (typeof CreateQuestInputCategory)[keyof typeof CreateQuestInputCategory];
+
+export const CreateQuestInputCategory = {
+  fitness: "fitness",
+  wellness: "wellness",
+  productivity: "productivity",
+} as const;
+
+export type CreateQuestInputGoalType =
+  (typeof CreateQuestInputGoalType)[keyof typeof CreateQuestInputGoalType];
+
+export const CreateQuestInputGoalType = {
+  daily: "daily",
+  weekly: "weekly",
+  long_term: "long_term",
+} as const;
+
 export interface CreateQuestInput {
   title: string;
-  description: string;
+  description?: string | null;
   difficulty: CreateQuestInputDifficulty;
   xpReward: number;
-  depthLevel: number;
+  category: CreateQuestInputCategory;
+  goalType: CreateQuestInputGoalType;
+  targetDate?: string | null;
 }
 
 export type UpdateQuestInputDifficulty =
@@ -76,13 +116,35 @@ export const UpdateQuestInputStatus = {
   failed: "failed",
 } as const;
 
+export type UpdateQuestInputCategory =
+  (typeof UpdateQuestInputCategory)[keyof typeof UpdateQuestInputCategory];
+
+export const UpdateQuestInputCategory = {
+  fitness: "fitness",
+  wellness: "wellness",
+  productivity: "productivity",
+} as const;
+
+export type UpdateQuestInputGoalType =
+  (typeof UpdateQuestInputGoalType)[keyof typeof UpdateQuestInputGoalType];
+
+export const UpdateQuestInputGoalType = {
+  daily: "daily",
+  weekly: "weekly",
+  long_term: "long_term",
+} as const;
+
 export interface UpdateQuestInput {
   title?: string;
-  description?: string;
+  description?: string | null;
   difficulty?: UpdateQuestInputDifficulty;
   status?: UpdateQuestInputStatus;
   xpReward?: number;
-  depthLevel?: number;
+  category?: UpdateQuestInputCategory;
+  goalType?: UpdateQuestInputGoalType;
+  streak?: number;
+  progress?: number;
+  targetDate?: string | null;
 }
 
 export type CreatureRarity =

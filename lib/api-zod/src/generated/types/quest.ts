@@ -5,17 +5,23 @@
  * AquaQuest API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { QuestCategory } from "./questCategory";
 import type { QuestDifficulty } from "./questDifficulty";
+import type { QuestGoalType } from "./questGoalType";
 import type { QuestStatus } from "./questStatus";
 
 export interface Quest {
   id: number;
   title: string;
-  description: string;
+  description?: string | null;
   difficulty: QuestDifficulty;
   status: QuestStatus;
   xpReward: number;
-  depthLevel: number;
+  category: QuestCategory;
+  goalType: QuestGoalType;
+  streak: number;
+  progress: number;
+  targetDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
